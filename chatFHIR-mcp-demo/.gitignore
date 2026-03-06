@@ -1,0 +1,15 @@
+### VisualStudioCode ###
+**/.vscode/*
+*.code-workspace
+
+# Project files
+**/*.secret
+volumes/*
+**/*.key
+**/*.tgz
+**/*.tar.gz
+
+# OS files
+.DS_Store
+.env
+.env_keys
