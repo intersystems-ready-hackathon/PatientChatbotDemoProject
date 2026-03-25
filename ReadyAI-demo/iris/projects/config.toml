@@ -6,7 +6,6 @@ username = "SuperUser"
 password = "SYS"
 
 
-
 [pool]
 min_connections = 5
 max_connections = 10

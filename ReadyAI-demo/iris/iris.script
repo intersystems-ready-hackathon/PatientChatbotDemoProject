@@ -26,16 +26,12 @@ do ##class(Security.Services).Modify("%Service_CallIn",.prop)
 
 
 
-
-
-
-
  zn "READYAI"
 
- zpm "load /home/irisowner/dev/ -v":1:1
+ zpm "load /home/irisowner/dev/ -v"
 
  Set appKey = "/readyai/r4"
- Set strategyClass = "HS.FHIRServer.Storage.JsonAdvSQL.InteractionsStrategy"
+ set strategyClass = "HS.FHIRServer.Storage.Json.InteractionsStrategy"
  Set metadataPackages = $lb("hl7.fhir.r4.core@4.0.1")
 
  // Install elements that are required for a FHIR-enabled namespace
@@ -44,28 +40,11 @@ do ##class(Security.Services).Modify("%Service_CallIn",.prop)
  // Install an instance of a FHIR Service into the current namespace
  Do ##class(HS.FHIRServer.Installer).InstallInstance(appKey, strategyClass, metadataPackages)
 
- do $System.OBJ.LoadDir("/home/irisowner/dev/FHIR/src","ck",,1)
- // do ##class(Ens.Director).SetAutoStart("Demo.READYAI.Interop.Production",1)
- // set ^EnsPortal.Settings("SuperUser","LastProduction")	= "Demo.READYAI.Interop.Production"
+set strategy = ##class(HS.FHIRServer.API.InteractionsStrategy).GetStrategyForEndpoint(appKey)
 
- //Get FHIR server's configuration object
- Set strategy = ##class(HS.FHIRServer.API.InteractionsStrategy).GetStrategyForEndpoint(appKey)
- Set configData = strategy.GetServiceConfigData()
- Set jsonConfigData = configData.AsJSONString()
-
- // Define additional settings
- Set enabled = 1
- Set serviceConfigName = "HS.FHIRServer.Interop.Service"
- Set oAuthClient = ""
-
-
- // Update FHIR Server
- Do ##class(HS.FHIRServer.Installer).UpdateInstance(appKey, jsonConfigData, enabled, serviceConfigName, oAuthClient)
-
- // Load sample FHIR data
- // Load Master Data (not required for current patient data)
- // Do ##class(HS.FHIRServer.Tools.DataLoader).SubmitResourceFiles("/home/irisowner/dev/FHIR/fhirsampledata/masterdata", "FHIRServer", appKey)
- // Load Patient Data
- Do ##class(HS.FHIRServer.Tools.DataLoader).SubmitResourceFiles("/home/irisowner/dev/fhirsampledata/patients", "FHIRServer", appKey)
-
+ Do ##class(HS.FHIRServer.Tools.DataLoader).SubmitResourceFiles("/tmp/fhirdata", "FHIRServer", appKey, 1, "^fhirlogs")
  
+halt
+
+
+

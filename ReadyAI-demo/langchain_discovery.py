@@ -27,10 +27,10 @@ async def get_tools():
     #     print(tool, "\n")
     print("Available MCP tools:")
     for tool in sorted(tools, key=lambda item: item.name):
-        if tool.name == "mcp_test_EchoUser":
+        if tool.name == "mcp_readyai_EchoUser":
             out = await tool.ainvoke({})
             print(out)
-        elif tool.name == "mcp_test_ListTables":
+        elif tool.name == "mcp_readyai_ListTables":
             out = await tool.ainvoke({})
             print(out)
         print(f"- {tool.name}")

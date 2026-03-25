@@ -10,8 +10,7 @@ WORKDIR /home/irisowner/dev
 
 
 COPY ./iris.script /opt/irisbuild/iris.script
-
-
+COPY ./fhirsampledata/patients /tmp/fhirdata
 COPY ./projects .
 
 ENV IRISNAMESPACE "READYAI"
