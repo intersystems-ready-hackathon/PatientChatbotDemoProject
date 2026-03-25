@@ -1,5 +1,0 @@
-uv
-mcpo
-fastmcp
-sqlalchemy
-sqlalchemy-iris[intersystems]

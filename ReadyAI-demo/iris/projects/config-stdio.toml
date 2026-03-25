@@ -1,0 +1,26 @@
+[iris]
+host = "0.0.0.0"
+port = 1972
+namespace = "READYAI"
+username = "SuperUser"
+password = "SYS"
+
+[iris.user_auth]
+username = "SuperUser"
+password = "SYS"
+
+[pool]
+min_connections = 5
+max_connections = 10
+connection_timeout = 30
+
+[discovery]
+auto_discover = true
+interval_seconds = 60
+cache_ttl = 300
+
+[server]
+transport = "stdio"
+
+[logging]
+level="debug"

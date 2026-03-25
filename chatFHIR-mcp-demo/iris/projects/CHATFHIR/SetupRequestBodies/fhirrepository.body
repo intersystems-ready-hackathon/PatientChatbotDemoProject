@@ -1,8 +1,0 @@
-{
-  "name": "ChatFHIRRepo",
-  "hostname": "localhost",
-  "port": "80",
-  "sslConfig": "",
-  "credentialsId": "ChatFHIRUser",
-  "repositoryURL": "/chatfhir/r4"
-}

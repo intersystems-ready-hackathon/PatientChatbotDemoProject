@@ -1,0 +1,6 @@
+Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("credentials", "/tmp/SetupRequestBodies/credentials.body")
+ Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("fhirrepository", "/tmp/SetupRequestBodies/fhirrepository.body")
+ Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("analysis", "/tmp/SetupRequestBodies/analysis.body")
+ Do ##class(Demo.READYAI.Setup.RestRequest).WaitForAnalysisComplete(1)
+ Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("transformspec", "/tmp/SetupRequestBodies/transformspec.body")
+ Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("projection", "/tmp/SetupRequestBodies/projection.body")

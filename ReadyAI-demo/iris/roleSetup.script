@@ -1,0 +1,22 @@
+zn "%SYS"
+
+
+
+do ##class(Security.Roles).Create("Doctor", "Roles group for full access to a patients medical records and history", "", "",  )
+
+set props("FullName")= "Dana Scully"
+set props("Password")="XFiles"
+set props("UserRoles")="Doctor"
+
+do ##class(Security.Users).Create("DScully", .props)
+
+
+
+
+do ##class(Security.Roles).Create("Nurse", "Roles group for partial access to a patients medical history", "", "",  )
+
+set props("FullName")= "Nurse Joy"
+set props("Password")="pokemon"
+set props("UserRoles")="Nurse"
+
+do ##class(Security.Users).Create("NJoy", .props)

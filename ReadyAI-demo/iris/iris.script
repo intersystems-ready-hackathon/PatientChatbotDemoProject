@@ -1,0 +1,65 @@
+superuser
+SYS
+ 
+ // Change namespace to %SYS
+set $NAMESPACE = "%SYS"
+
+s version="latest" s r=##class(%Net.HttpRequest).%New(),r.Server="pm.community.intersystems.com",r.SSLConfiguration="ISC.FeatureTracker.SSL.Config" d r.Get("/packages/zpm/"_version_"/installer"),$system.OBJ.LoadStream(r.HttpResponse.Data,"c")
+zpm 'repo -r -n registry -url https://pm.community.intersystems.com/ -user "" -pass "" '
+// Save the current settings to a new array called `prop`
+do ##class(Security.Services).Get("%Service_CallIn",.prop)
+
+// Enable the service
+set prop("Enabled")=1
+
+// Uncomment to Allow unauthenticated access (removes the need for environmental credentials)
+// set prop("AutheEnabled")=48
+
+// Modify the settings using our edited settings array
+do ##class(Security.Services).Modify("%Service_CallIn",.prop)
+
+ // Create a HS enabled namespace with foundation production
+ zn "HSLIB"
+ set tSC=##class(HS.Util.Installer.Foundation).Install("READYAI",.pVars)
+
+
+
+
+
+ zn "READYAI"
+
+ Set appKey = "/readyai/r4"
+ Set strategyClass = "HS.FHIRServer.Storage.JsonAdvSQL.InteractionsStrategy"
+ Set metadataPackages = $lb("hl7.fhir.r4.core@4.0.1")
+
+ // Install elements that are required for a FHIR-enabled namespace
+ Do ##class(HS.FHIRServer.Installer).InstallNamespace("READYAI")
+
+ // Install an instance of a FHIR Service into the current namespace
+ Do ##class(HS.FHIRServer.Installer).InstallInstance(appKey, strategyClass, metadataPackages)
+
+ do $System.OBJ.LoadDir("/opt/irisbuild/src","ck",,1)
+ do ##class(Ens.Director).SetAutoStart("Demo.READYAI.Interop.Production",1)
+ set ^EnsPortal.Settings("SuperUser","LastProduction")	= "Demo.READYAI.Interop.Production"
+
+ //Get FHIR server's configuration object
+ Set strategy = ##class(HS.FHIRServer.API.InteractionsStrategy).GetStrategyForEndpoint(appKey)
+ Set configData = strategy.GetServiceConfigData()
+ Set jsonConfigData = configData.AsJSONString()
+
+ // Define additional settings
+ Set enabled = 1
+ Set serviceConfigName = "HS.FHIRServer.Interop.Service"
+ Set oAuthClient = ""
+
+
+ // Update FHIR Server
+ Do ##class(HS.FHIRServer.Installer).UpdateInstance(appKey, jsonConfigData, enabled, serviceConfigName, oAuthClient)
+
+ // Load sample FHIR data
+ // Load Master Data (not required for current patient data)
+ // Do ##class(HS.FHIRServer.Tools.DataLoader).SubmitResourceFiles("/home/irisowner/dev/FHIR/fhirsampledata/masterdata", "FHIRServer", appKey)
+ // Load Patient Data
+ Do ##class(HS.FHIRServer.Tools.DataLoader).SubmitResourceFiles("/home/irisowner/dev/fhirsampledata/patients", "FHIRServer", appKey)
+
+ 
