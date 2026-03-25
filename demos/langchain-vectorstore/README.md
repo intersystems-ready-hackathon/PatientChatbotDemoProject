@@ -57,3 +57,12 @@ python demo.py --query "climate and clean energy"
 
 Code lives in Perforce at `//Users/adang/langchain_intersystems/` (Aohan Dang).
 Moving to GitLab: [CRE-14103](https://usjira.iscinternal.com/browse/CRE-14103)
+
+## Demo files
+
+| File | Purpose |
+|---|---|
+| `demo.py` | Simple demo with direct OpenAI credentials |
+| `demo_configstore.py` | Full e2e: ConfigStore → `IRISChatModel` + `IRISVectorStore` → semantic search → LLM summarization, no API key in app code |
+| `iris_chat_model.py` | `IRISChatModel` — `BaseChatModel` that resolves provider/model from IRIS ConfigStore (demo implementation of DP-445282) |
+| `seed_configstore.py` | Creates `AIGateway_Storage.LLMProvider` table and registers `openai-demo` — the admin setup step from the user story |
