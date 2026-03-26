@@ -22,12 +22,13 @@ docker exec -it iris iris session iris
 ```
 
 ```objectscript
-Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("credentials", "/tmp/SetupRequestBodies/credentials.body")
-Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("fhirrepository", "/tmp//SetupRequestBodies/fhirrepository.body")
-Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("analysis", "/tmp/SetupRequestBodies/analysis.body")
+ZN "READYAI"
+Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("credentials", "/home/irisowner/dev/FHIR/SetupRequestBodies/credentials.body")
+Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("fhirrepository", "/home/irisowner/dev/FHIR//SetupRequestBodies/fhirrepository.body")
+Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("analysis", "/home/irisowner/dev/FHIR/SetupRequestBodies/analysis.body")
 Do ##class(Demo.READYAI.Setup.RestRequest).WaitForAnalysisComplete(1)
-Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("transformspec", "/tmp//SetupRequestBodies/transformspec.body")
-Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("projection", "/tmp/SetupRequestBodies/projection.body")
+Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("transformspec", "/home/irisowner/dev/FHIR/SetupRequestBodies/transformspec.body")
+Do ##class(Demo.READYAI.Setup.RestRequest).LocalPOSTRequest("projection", "/home/irisowner/dev/FHIR/SetupRequestBodies/projection.body")
 ```
 
 The SetupRequestBodies folder contains the request bodies, which are copied to /tmp/SetupRequestBodies as part of the customization build step.

@@ -45,6 +45,58 @@ python demo.py --query "climate and clean energy"
 | `IRIS_USERNAME` | `_SYSTEM` | IRIS username |
 | `IRIS_PASSWORD` | `SYS` | IRIS password |
 
+## Connect to an existing vector store collection
+
+`IRISVectorStore` can attach to an already-created IRIS table. You do not need
+to recreate the collection each run.
+
+Use the same `collection_name` and keep `replace_collection=False` (default):
+
+```python
+from langchain_openai import OpenAIEmbeddings
+from langchain_intersystems.vectorstore import IRISVectorStore, SimilarityMetric
+
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+store = IRISVectorStore(
+	embedding_function=embeddings,
+	connect_kwargs={
+		"hostname": "localhost",
+		"port": 1972,
+		"namespace": "USER",
+		"username": "_SYSTEM",
+		"password": "SYS",
+	},
+	collection_name="SOTU_Demo",      # existing table/collection name
+	replace_collection=False,           # important: do not drop/recreate
+	similarity_metric=SimilarityMetric.COSINE,
+)
+
+results = store.similarity_search("What did the president say about jobs?", k=3)
+for doc in results:
+	print(doc.id, doc.metadata)
+```
+
+Behavior when the collection already exists:
+
+- Reuses the existing table.
+- Validates that embedding dimension matches.
+- Validates that stored embedding model marker matches.
+- Loads existing metadata columns automatically.
+
+When to use each constructor path:
+
+- Use `IRISVectorStore(...)` to connect to an existing collection.
+- Use `IRISVectorStore.from_texts(...)` when you want to create/load data from
+  text immediately (it initializes the store and then adds texts).
+
+Common failure cases:
+
+- Different embedding model than what the collection was created with.
+- Different embedding dimension.
+- Invalid collection name format.
+- Setting `replace_collection=True` (this will replace existing table data).
+
 ## What makes this interesting
 
 - **No SQLAlchemy** — uses IRIS DB-API directly for performance

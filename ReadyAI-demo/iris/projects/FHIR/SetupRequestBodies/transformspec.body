@@ -191,11 +191,43 @@
           "RENAMED": "ObservationSubjectReference"
         }
       ]
+    },
+    {
+      "resourceType": "DocumentReference",
+      "columns": [
+        {
+          "name": "Patient",
+          "type": "String",
+          "path": "DocumentReference.subject.reference",
+          "index": false,
+          "dataIndex": false,
+          "length": 10,
+          "RENAMED": "DocumentReferenceSubjectReference"
+        },
+        {
+          "name": "AttachmentData",
+          "type": "String",
+          "path": "DocumentReference.content.attachment.data",
+          "index": false,
+          "dataIndex": false,
+          "length": "",
+          "RENAMED": "DocumentReferenceContentAttachmentData"
+        },
+        {
+          "name": "ContentType",
+          "type": "String",
+          "path": "DocumentReference.content.attachment.contentType",
+          "index": false,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "DocumentReferenceContentAttachmentContentType"
+        }
+      ]
     }
   ],
   "version": 1,
-  "scanStartDateTime": "2025-10-21T13:03:55Z",
+  "scanStartDateTime": "2026-03-26T11:44:55Z",
   "scanFHIRRepositoryName": "READYAIRepo",
   "id": 1,
-  "lastModified": "2025-10-22T14:09:41.935Z"
+  "lastModified": "2026-03-26T11:50:04.361Z"
 }
