@@ -66,3 +66,13 @@ cd mcp_test_stdio
 pip install --break-system-packages fastmcp
 ```
 
+## Vector store from DocumentReference Resources
+
+The document reference resources (Synthetic clinical notes made for the original FHIR AI Hackathon Kit) have been added to the FHIR SQL builder transform. This can be loaded into a vector store with: 
+
+```objectscript
+zn "READYAI"
+do ##class(RAG.DocRefVectorSetup).EmbedText()
+```
+
+The vector store will have the name `AFHIRData.DocRefVectorStore`.

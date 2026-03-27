@@ -1,4 +1,4 @@
-FROM i4h-aihub-137
+FROM i4h-aihub-140
 
 ENV IRISUSERNAME "SuperUser"
 ENV IRISPASSWORD "SYS"
@@ -10,6 +10,7 @@ WORKDIR /home/irisowner/dev
 
 
 COPY ./iris.script /opt/irisbuild/iris.script
+COPY ./roleSetup.script /opt/irisbuild/roleSetup.script
 COPY ./fhirsampledata/patients /tmp/fhirdata
 COPY ./projects .
 
@@ -18,4 +19,5 @@ WORKDIR /home/irisowner/dev
 
 RUN iris start IRIS \
     && iris session IRIS < /opt/irisbuild/iris.script\ 
+    && iris session IRIS < /opt/irisbuild/roleSetup.script \
     && iris stop IRIS quietly
