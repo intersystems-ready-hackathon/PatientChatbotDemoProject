@@ -14,6 +14,7 @@ Method %LogExecution(call As %DynamicObject, metadata As %DynamicObject, result 
     Set logEntry.Timestamp = $ZDATETIME($HOROLOG)
    Set logEntry.Duration = duration
     Set logEntry.Status = status
+    set logEntry.Username = $USERNAME
 
     // Save the log entry to the database
     set st =  logEntry.%Save()

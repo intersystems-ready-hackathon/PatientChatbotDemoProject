@@ -23,8 +23,8 @@ async def get_tools():
     )
 
     tools = await client.get_tools()
-    # for tool in tools: 
-    #     print(tool, "\n")
+    for tool in tools: 
+        print("- ", tool, "\n")
     print("Available MCP tools:")
     for tool in sorted(tools, key=lambda item: item.name):
         if tool.name == "mcp_readyai_EchoUser":
@@ -33,7 +33,15 @@ async def get_tools():
         elif tool.name == "mcp_readyai_ListTables":
             out = await tool.ainvoke({})
             print(out)
+        
+        elif tool.name == "mcp_readyai_QueryTable":
+            out = await tool.ainvoke({"patientIds": ["Patient/4"], "tableName": "Observation"})
+            print(out)  
+       
+        #     print(out)
         print(f"- {tool.name}")
+
+    
     return tools 
 
 async def main():
@@ -42,15 +50,15 @@ async def main():
     if tools== [] or tools is None:
         print("No tools available. Exiting.")
         return
-    llm = ChatOpenAI(model="gpt-5-nano", temperature=0)
-    agent = create_agent(llm, tools=tools)
+    # llm = ChatOpenAI(model="gpt-5-nano", temperature=0)
+    # agent = create_agent(llm, tools=tools)
 
     # async for chunk in agent.astream(
     #     {
     #         "messages": [
     #             {
     #                 "role": "user",
-    #                 "content": "Can you tell me all the conditions in the database?"
+    #                 "content": "Can you tell me patient number 25 with the tables in the database?"
     #             }
     #         ]
     #     },

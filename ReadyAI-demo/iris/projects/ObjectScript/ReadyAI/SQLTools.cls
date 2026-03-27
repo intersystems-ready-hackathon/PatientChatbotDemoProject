@@ -1,17 +1,18 @@
 Class ReadyAI.SQLTools Extends %AI.Tool
 {
 
-Parameter PackageName = "FHIRData";
+Parameter PackageName = "AFHIRData";
 
-/// Description
-Method ListTables() As %Status
+/// List the Availble tables in the FHIRData Schema
+Method ListTables() As %DynamicObject
 {
         Set sc = $$$OK
-        // do something
+
 
         set query = "SELECT JSON_ARRAYAGG(JSON_OBJECT('TABLE_SCHEMA':TABLE_SCHEMA, 'TABLE_NAME':TABLE_NAME)) AS tables FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='"_..#PackageName_"'"
         set statement = ##class(%SQL.Statement).%New()
         set status = statement.%Prepare(query)
+
         if $$$ISERR(status) {
             set sc = status
             do $System.Status.DisplayError(status)
@@ -19,16 +20,15 @@ Method ListTables() As %Status
         }
         set resultSet = statement.%Execute()
 
-        
+
+        do resultSet.%Next()
         set tables = resultSet.%Get("tables")
-        write tables 
+
         Return {"Method": "ListTables", "Status":(sc), "Tables": (tables)}
 }
 
-// Query a FHIRdata Table for all entries for a given list of Patients. PatientIds should be passed as a list of patient identifiers
-
-// in the format Patient/1, Patient/2, etc. 
-
+/// Query a FHIRdata Table for all entries for a given list of Patients. PatientIds should be passed as a list of patient identifiers
+/// in the format ["Patient/1", "Patient/2", ...]
 Method QueryTable(tableName As %String, patientIds As %DynamicArray(ELEMENTTYPE="%String")) As %DynamicObject
 {
         set response = {}
@@ -75,12 +75,14 @@ Method QueryTable(tableName As %String, patientIds As %DynamicArray(ELEMENTTYPE=
         if columnCount=0 {
             do response.%Set("Status", "ERROR")
             do response.%Set("Error", "Table not found in schema "_..#PackageName)
+            set ^QueryTableLog($INCREMENT(^QueryTableLog)) = response.%ToJSON()
             quit response
         }
 
         if patientColumn="" {
             do response.%Set("Status", "ERROR")
             do response.%Set("Error", "No supported patient ID column found on table "_tableName)
+            set ^QueryTableLog($INCREMENT(^QueryTableLog)) = response.%ToJSON()
             quit response
         }
 
@@ -92,6 +94,7 @@ Method QueryTable(tableName As %String, patientIds As %DynamicArray(ELEMENTTYPE=
         if $$$ISERR(status) {
             do response.%Set("Status", "ERROR")
             do response.%Set("Error", $System.Status.GetErrorText(status))
+            set ^QueryTableLog($INCREMENT(^QueryTableLog)) = response.%ToJSON()
             quit response
         }
 
@@ -112,9 +115,11 @@ Method QueryTable(tableName As %String, patientIds As %DynamicArray(ELEMENTTYPE=
         }
 
         do response.%Set("Status", "OK")
+        set ^QueryTableLog($INCREMENT(^QueryTableLog)) = response.%ToJSON()
         quit response
 }
 
+/// Get a list of patient identifiers for patients with a given condition. Condition should be passed as a SNOMED code.
 Method GetPatientsByCondition(pConditionCode As %Integer) As %DynamicObject
 {
 
@@ -150,7 +155,8 @@ Method GetPatientsByCondition(pConditionCode As %Integer) As %DynamicObject
         quit response
 }
 
-Method GetConditionsList()
+/// Retrieve a list of all the conditions in the Condition table, along with their SNOMED codes and descriptions
+Method GetConditionsList() As %DynamicObject
 {
         set response = {}
         set conditions = []

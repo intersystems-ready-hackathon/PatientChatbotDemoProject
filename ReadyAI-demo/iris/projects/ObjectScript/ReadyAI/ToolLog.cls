@@ -15,6 +15,8 @@ Property Status As %Status;
 
 Property Timestamp As %DateTime;
 
+Property Username As %String;
+
 Storage Default
 {
 <Data name="Metadata">
@@ -48,12 +50,15 @@ Storage Default
 <Value name="5">
 <Value>Timestamp</Value>
 </Value>
+<Value name="6">
+<Value>Username</Value>
+</Value>
 </Data>
-<DataLocation>^READYAI.ToolLogD</DataLocation>
+<DataLocation>^ReadyAI.ToolLogD</DataLocation>
 <DefaultData>ToolLogDefaultData</DefaultData>
-<IdLocation>^READYAI.ToolLogD</IdLocation>
-<IndexLocation>^READYAI.ToolLogI</IndexLocation>
-<StreamLocation>^READYAI.ToolLogS</StreamLocation>
+<IdLocation>^ReadyAI.ToolLogD</IdLocation>
+<IndexLocation>^ReadyAI.ToolLogI</IndexLocation>
+<StreamLocation>^ReadyAI.ToolLogS</StreamLocation>
 <Type>%Storage.Persistent</Type>
 }
 

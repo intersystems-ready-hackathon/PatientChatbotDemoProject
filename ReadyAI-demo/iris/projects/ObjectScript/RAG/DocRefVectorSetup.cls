@@ -1,5 +1,6 @@
 Class RAG.DocRefVectorSetup Extends %RegisteredObject
 {
+
 /// Creates a vector store from the AFHIRData.DocumentReference table using the FastEmbed AllMiniLML6V2 model
 ClassMethod EmbedText() As %Status
 {
