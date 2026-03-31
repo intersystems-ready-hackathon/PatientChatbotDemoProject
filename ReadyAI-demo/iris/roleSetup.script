@@ -19,7 +19,7 @@ do $SYSTEM.Status.DisplayError(sc)
 
 set props("FullName")= "Dana Scully"
 set props("Password")="XFiles"
-set props("Roles")="Doctor,%DB_READYAI,%SQL"
+set props("Roles")="%All,Doctor"
 
 do ##class(Security.Users).Create("DScully", .props)
 
@@ -33,6 +33,6 @@ set sc = ##class(Security.Roles).Modify("Nurse", .props)
 
 set props("FullName")= "Nurse Joy"
 set props("Password")="pokemon"
-set props("Roles")="Nurse,%DB_READYAI,%SQL"
+set props("Roles")="%All,Nurse"
 
 do ##class(Security.Users).Create("NJoy", .props)

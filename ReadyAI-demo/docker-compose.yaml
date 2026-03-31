@@ -4,31 +4,41 @@ services:
       context: ./iris
     env_file:
       - .env
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
     - 1973:1972
     - 8888:8888
+    - 32791:80
     volumes:
     - ./iris/projects:/home/irisowner/dev
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "iris", "session", "IRIS", "-U", "READYAI", "halt"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
-  webgateway:
-    image: containers.intersystems.com/intersystems/webgateway:2025.3
-    hostname: localhost
-    container_name: iris-wg-2
-    ports:
-    - "32783:80"
-    - "32784:443"
-    environment:
-    - ISC_CSP_CONF_FILE=/webgateway-shared/CSP.conf
-    - ISC_CSP_INI_FILE=/webgateway-shared/CSP.ini
+  mcp-server:
+    build:
+      context: ./iris
+    command: bash -c "cd /home/irisowner/dev && iris-mcp-server -c config.toml run"
+    depends_on:
+      iris:
+        condition: service_healthy
     volumes:
-    - ./iris/resources/webgateway:/webgateway-shared
+    - ./iris/projects:/home/irisowner/dev
+    network_mode: "service:iris"
+    restart: unless-stopped
 
   langchain:
     build:
       context: ./langchain_external
     env_file:
       - .env
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports:
       - "8501:8501"
     volumes:

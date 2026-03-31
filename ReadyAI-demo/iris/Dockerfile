@@ -1,4 +1,4 @@
-FROM i4h-aihub-140
+FROM i4h-aihub-142
 
 ENV IRISUSERNAME "SuperUser"
 ENV IRISPASSWORD "SYS"

@@ -3,3 +3,13 @@
 .DS_Store
 **.secret
 **/.venv
+__pycache__/
+*.pyc
+*.key
+*.lic
+*.whl
+ReadyAI-demo/langchain_external/dist/
+ReadyAI-demo/langchain_external/readyai_app/dist/
+ReadyAI-demo/iris4h-aicore-build/*.tar.gz
+ReadyAI-demo/iris4h-aicore-build/keys/
+*.env.example

@@ -1,0 +1,6 @@
+langchain>=1.2.13
+langchain-mcp-adapters>=0.2.2
+langchain-openai>=0.3
+streamlit>=1.45
+intersystems-irispython>=3.9
+/app/dist/langchain_intersystems-0.0.1-py3-none-any.whl

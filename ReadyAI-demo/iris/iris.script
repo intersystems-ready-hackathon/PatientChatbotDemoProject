@@ -1,50 +1,53 @@
 superuser
 SYS
- 
- // Create a HS enabled namespace with foundation production
- zn "HSLIB"
- set tSC=##class(HS.Util.Installer.Foundation).Install("READYAI",.pVars)
 
- // Change namespace to %SYS
-set $NAMESPACE = "%SYS"
+ // ---- Install ZPM ----
+ set $NAMESPACE = "%SYS"
+ set tURL = "https://pm.community.intersystems.com/packages/zpm/latest/installer"
+ set r = ##class(%Net.HttpRequest).%New()
+ set r.Server = "pm.community.intersystems.com"
+ set r.SSLConfiguration = "ISC.FeatureTracker.SSL.Config"
+ do r.Get("/packages/zpm/latest/installer")
+ do $system.OBJ.LoadStream(r.HttpResponse.Data,"c")
+ zpm "enable -community"
 
-// Install ZPM
-s version="latest" s r=##class(%Net.HttpRequest).%New(),r.Server="pm.community.intersystems.com",r.SSLConfiguration="ISC.FeatureTracker.SSL.Config" d r.Get("/packages/zpm/"_version_"/installer"),$system.OBJ.LoadStream(r.HttpResponse.Data,"c") zpm "enable -community"
+ // ---- Enable CallIn service ----
+ do ##class(Security.Services).Get("%Service_CallIn",.prop)
+ set prop("Enabled") = 1
+ do ##class(Security.Services).Modify("%Service_CallIn",.prop)
 
+ // ---- Create READYAI database and namespace ----
+ set dbDir = "/usr/irissys/mgr/readyai/"
+ do ##class(%Library.File).CreateDirectoryChain(dbDir)
+ do ##class(SYS.Database).CreateDatabase(dbDir)
+ set dbProps("Directory") = dbDir
+ do ##class(Config.Databases).Create("READYAI",.dbProps)
+ set nsProps("Globals") = "READYAI"
+ set nsProps("Library") = "IRISLIB"
+ set nsProps("Routines") = "READYAI"
+ set nsProps("SysGlobals") = "IRISSYS"
+ set nsProps("SysRoutines") = "IRISSYS"
+ set nsProps("TempGlobals") = "IRISTEMP"
+ do ##class(Config.Namespaces).Create("READYAI",.nsProps)
+ write "READYAI namespace created",!
 
-// Save the current settings to a new array called `prop`
-do ##class(Security.Services).Get("%Service_CallIn",.prop)
-
-// Enable the service
-set prop("Enabled")=1
-
-// Uncomment to Allow unauthenticated access (removes the need for environmental credentials)
-// set prop("AutheEnabled")=48
-
-// Modify the settings using our edited settings array
-do ##class(Security.Services).Modify("%Service_CallIn",.prop)
-
-
+ // ---- Map IPM to READYAI and load IPM package ----
+ // IPM (zpm load) registers /mcp/readyAI with PasswordAuth+Unauthenticated from module.xml
+ zpm "enable -map -globally"
 
  zn "READYAI"
-
  zpm "load /home/irisowner/dev/ -v"
 
- Set appKey = "/readyai/r4"
- set strategyClass = "HS.FHIRServer.Storage.Json.InteractionsStrategy"
- Set metadataPackages = $lb("hl7.fhir.r4.core@4.0.1")
+ // ---- Ensure all routines are compiled and persisted ----
+ do $system.OBJ.CompilePackage("ReadyAI","ck")
+ do $system.OBJ.CompilePackage("Utils","ck")
+ do $system.OBJ.CompilePackage("Examples","ck")
 
- // Install elements that are required for a FHIR-enabled namespace
- Do ##class(HS.FHIRServer.Installer).InstallNamespace("READYAI")
+ // ---- Setup ConfigStore LLM config ----
+ do ##class(ReadyAI.ConfigStoreSetup).Setup()
+ // NOTE: FHIR SQL Builder setup (ReadyAI.FSBSetup.RunFHIR) is NOT run here
+ // because it takes 30-40 minutes. Run it manually after first docker-compose up:
+ //   python3 scripts/fhir_setup.py
 
- // Install an instance of a FHIR Service into the current namespace
- Do ##class(HS.FHIRServer.Installer).InstallInstance(appKey, strategyClass, metadataPackages)
-
-set strategy = ##class(HS.FHIRServer.API.InteractionsStrategy).GetStrategyForEndpoint(appKey)
-
- Do ##class(HS.FHIRServer.Tools.DataLoader).SubmitResourceFiles("/tmp/fhirdata", "FHIRServer", appKey, 1, "^fhirlogs")
- 
-halt
-
-
+ halt
 

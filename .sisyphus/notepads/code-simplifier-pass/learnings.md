@@ -1,0 +1,2 @@
+- 2026-03-31: In test suites that heavily patch Streamlit module imports, a shared context manager for `patch.dict(sys.modules, ...)` removes a lot of duplication without changing test intent.
+- 2026-03-31: `PatientSnapshotAgent.stream_response` tests must explicitly set `message.type = "ai"` in mocked chunks; otherwise content blocks are skipped by design.
