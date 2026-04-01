@@ -14,10 +14,9 @@
         Url="/mcp/readyAI"
         Recurse="1"
         DispatchClass="ReadyAI.MCPService"
-        MatchRoles=":%All"
-        AutheEnabled="64"
-       />
-
+        AutheEnabled="#{$$$AutheCache}"
+        Type="18" 
+       /> 
     </Module>
     
   </Document>

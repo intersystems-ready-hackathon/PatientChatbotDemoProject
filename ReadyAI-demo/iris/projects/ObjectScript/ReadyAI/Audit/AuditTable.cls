@@ -1,4 +1,4 @@
-Class ReadyAI.AuditTable Extends %AI.Policy.Audit
+Class ReadyAI.Audit.AuditTable Extends %AI.Policy.Audit
 {
 
 Method %LogExecution(call As %DynamicObject, metadata As %DynamicObject, result As %DynamicObject, duration As %Integer, status As %Status) As %Status
@@ -6,7 +6,7 @@ Method %LogExecution(call As %DynamicObject, metadata As %DynamicObject, result 
     // Create a new log entry
     set ^toolLog(1) = "True"
     
-    Set logEntry = ##class(ReadyAI.ToolLog).%New()
+    Set logEntry = ##class(ReadyAI.Audit.ToolLog).%New()
     Set logEntry.ToolName = call.%Get("name", "unknown")
     Set logEntry.ToolCall = call
     Set logEntry.Metadata = metadata

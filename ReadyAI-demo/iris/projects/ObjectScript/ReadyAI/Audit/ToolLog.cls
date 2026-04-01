@@ -1,4 +1,4 @@
-Class ReadyAI.ToolLog Extends %Persistent
+Class ReadyAI.Audit.ToolLog Extends %Persistent
 {
 
 Property ToolName As %String;

@@ -1,4 +1,4 @@
-Class ReadyAI.ConfigStoreSetup Extends %RegisteredObject
+Class ReadyAI.Setup.ConfigStoreSetup Extends %RegisteredObject
 {
 
 ClassMethod Setup() As %Status
