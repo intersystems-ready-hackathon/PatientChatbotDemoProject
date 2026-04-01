@@ -35,7 +35,7 @@ async def get_tools():
             print(out)
         
         elif tool.name == "mcp_readyai_QueryTable":
-            out = await tool.ainvoke({"patientIds": ["Patient/4"], "tableName": "Observation"})
+            out = await tool.ainvoke({"patientId": 3, "tableName": "Observation"})
             print(out)  
        
         #     print(out)

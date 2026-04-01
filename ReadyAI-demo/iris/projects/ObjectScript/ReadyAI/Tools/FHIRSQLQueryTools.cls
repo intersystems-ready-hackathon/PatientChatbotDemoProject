@@ -83,7 +83,7 @@ Method QueryTable(tableName As %String, patientId As %Integer) As %DynamicObject
 
         do response.%Set("PatientColumn", patientColumn)
 
-        set query = "SELECT * TOP 50 FROM "_..#PackageName_"."_tableName_" WHERE "_patientColumn_" = ?"
+        set query = "SELECT TOP 50 *  FROM "_..#PackageName_"."_tableName_" WHERE "_patientColumn_" = ?"
         set statement = ##class(%SQL.Statement).%New()
         set status = statement.%Prepare(query)
         if $$$ISERR(status) {

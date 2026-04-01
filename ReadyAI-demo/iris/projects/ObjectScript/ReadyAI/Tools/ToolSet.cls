@@ -6,7 +6,7 @@ XData Definition [ MimeType = application/xml ]
 <ToolSet Name="ReadyAI.ToolSet">
             <Description>ToolSet for READYAI demo</Description>
             <Policies>
-                <Audit Class="ReadyAI.AuditTable" />
+                <Audit Class="ReadyAI.Audit.AuditTable" />
             </Policies>
             <Include Class="Examples.EchoUser"/>
 
