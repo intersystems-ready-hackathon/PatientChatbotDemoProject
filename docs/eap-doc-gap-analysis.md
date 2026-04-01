@@ -180,17 +180,23 @@ These gaps are not in the AI Hub EAP's scope but caused significant friction dur
 
 **Where this belongs:** HealthShare / FHIR SQL Builder documentation. Not AI Hub EAP scope.
 
+**Existing docs:** [FHIR SQL Builder](https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=FHIRSQL) has 6 sections (Introduction, Generate Schema, Access the Builder, Analyze Repo, Create Specification, Create Projection) — all describe the **UI workflow only**. [Install FHIR Server](https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIR_server_install) documents `HS.FHIRServer.Installer` but not the SQL Builder REST endpoints. **No programmatic/REST API documentation exists.**
+
 #### 10. `%Service_Bindings` Auth for Non-Privileged Users
 
 **What we discovered:** Non-`%All` users cannot connect via the Python DB-API (`iris.connect`) unless `%Service_Bindings` has the correct authentication bits set. The `aicore-iris:140` base image had `AutheEnabled=96` (Kerberos-only) on `%Service_Bindings`, which meant only `%All` users could connect. We worked around this by giving Doctor/Nurse the `%All` role.
 
 **Where this belongs:** IRIS platform documentation on `%Service_Bindings` and the DB-API driver. Not AI Hub EAP scope.
 
+**Existing docs:** [Managing Services](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=GSA_manage_services) covers service configuration. [Authentication Overview](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=AAUTHN) covers auth mechanisms. [Python DB-API intro](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=BPYDBAPI_about) covers connection setup. **None connect the dots:** "to connect via Python DB-API, `%Service_Bindings` must have password auth enabled for non-%All users."
+
 #### 11. Ensemble Production Must Be Started for FHIR Data Loading
 
 `Ens.Director.StartProduction()` must be called before `HS.FHIRServer.Tools.DataLoader.SubmitResourceFiles()`. Without it, the data loader silently does nothing.
 
 **Where this belongs:** HealthShare FHIR Server documentation.
+
+**Existing docs:** [Install FHIR Server](https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIR_server_install) likely mentions this implicitly — the production is started as part of `HS.FHIRServer.Installer.InstallNamespace`. But the `DataLoader.SubmitResourceFiles` prerequisite for a running production **is not called out explicitly**.
 
 ### P3: Nice to Have
 
@@ -209,6 +215,25 @@ We used `module.xml` to auto-register the CSP web app during `zpm load`:
 This is cleaner than manual `Security.Applications.Create` calls. Worth documenting as a best practice.
 
 **Where this belongs:** IPM / ZPM documentation.
+
+**Existing docs:** No official docs.intersystems.com page. Best community resources: [Anatomy of a ZPM Module](https://community.intersystems.com/post/anatomy-zpm-module-packaging-your-intersystems-solution), [Describing module.xml](https://community.intersystems.com/post/describing-module-xml-objectscript-package-manager), [ZPM + CSP pages](https://community.intersystems.com/post/zpm-adding-csp-pages-existing-namespace). The [IPM GitHub repo](https://github.com/intersystems/ipm) has some docs but **no formal reference for the `WebApplication` XML element**.
+
+---
+
+## Existing docs.intersystems.com References (for cross-linking)
+
+| Topic | URL | Coverage |
+|---|---|---|
+| IRIS containers | https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=ADOCK | Good — but no IRIS vs IRISHealth comparison |
+| IRIS for Health containers | https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=ADOCK | Separate doc set — implies IRISHealth is different |
+| Container Registry | https://docs.intersystems.com/components/csp/docbook/DocBook.UI.Page.cls?KEY=PAGE_containerregistry | Lists both image types |
+| Managing Services | https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=GSA_manage_services | `%Service_Bindings` config |
+| Authentication mechanisms | https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=AAUTHN | AutheEnabled bitmask values |
+| Python DB-API | https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=BPYDBAPI_about | Connection setup |
+| CSP web application config | https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=GCSP_appdef | AutheEnabled for CSP apps |
+| FHIR SQL Builder | https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=FHIRSQL | UI workflow only |
+| Install FHIR Server | https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIR_server_install | `HS.FHIRServer.Installer` |
+| Secrets Management (Wallet) | https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=ROARS_secrets_mgmt | `%Wallet` API |
 
 ---
 
@@ -246,3 +271,109 @@ Credit where due — these sections saved us significant time:
 | 10 | Document `%Service_Bindings` auth for non-%All DB-API users | IRIS Security docs | P2 |
 | 11 | Document `Ens.Director.StartProduction` prerequisite for FHIR data loading | HealthShare FHIR Server docs | P2 |
 | 12 | Document IPM `WebApplication` element for CSP app auto-registration | IPM / ZPM docs | P3 |
+
+---
+
+## Skills We Should Write
+
+Based on what we actually struggled with during this session, these are the agent skills that would have saved the most time. Each maps to a specific failure mode we hit and the resolution we eventually found.
+
+### Skill 1: `iris-security-prereqs` — IRIS Security Prerequisite Checker
+
+**What went wrong:** We spent 2+ hours on `%Service_Bindings` `AutheEnabled=96` blocking non-%All users from connecting via DB-API. We tried every combination of `AutheEnabled` values, `Security.Applications.Modify`, `Security.Users.Create` with different role strings — none of which were the actual problem. The real fix was giving users `%All` (workaround) or changing `%Service_Bindings` auth (which we couldn't do from Python).
+
+**What the skill does:** When an IRIS connection fails with "Access Denied" or similar, the skill:
+1. Connects as SuperUser to check `%Service_Bindings`, `%Service_CallIn`, `%Service_Gateway` auth settings
+2. Checks the target user's roles vs what the service requires
+3. Checks the target namespace's `%DB_*` resource permissions
+4. Reports the specific fix needed (which service, which auth bit, which role)
+
+**Key doc links to embed:**
+- https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=GSA_manage_services
+- https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=AAUTHN
+
+**Gaps this doesn't cover:** The docs don't explain the `AutheEnabled` bitmask values for `%Service_Bindings` in the context of Python DB-API specifically. The skill needs to hardcode the knowledge that `AutheEnabled=96` = Kerberos-only = blocks password-based DB-API connections.
+
+### Skill 2: `iris-mcp-server-setup` — MCP Server Configuration & Troubleshooting
+
+**What went wrong:** We spent hours on:
+- `iris-mcp-server` returning 0 tools (discovery failure) — root cause: `AutheEnabled=4` on the CSP app instead of `64`
+- `CSPSystem` vs `SuperUser` in `config.toml` — CSPSystem had empty roles, couldn't access READYAI namespace
+- WebSocket backchannel corruption on large responses — workaround: `TOP 50` in SQL
+
+**What the skill does:** Given an `iris-mcp-server` config.toml and a running IRIS instance:
+1. Verifies the CSP web app exists with `AutheEnabled=64`
+2. Checks that the `server.username` in config.toml can access the endpoint namespace
+3. Tests tool discovery via a direct wgproto call
+4. If tools return 0: checks SPECIFICATION parameter, class compilation, namespace mapping
+5. If tool calls fail: checks response size, suggests `TOP N` workaround
+
+**Key doc links to embed:**
+- The EAP `MCP_Server_Guide.md` (the full TOML reference is excellent)
+- The EAP `MCP_Server_Examples.md` (the `AutheEnabled=64, Type=18` pattern)
+- https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=GCSP_appdef
+
+**Gaps this doesn't cover:** The large response corruption is a `iris-mcp-server 2.0.0` bug with no doc reference — the skill must encode the workaround directly.
+
+### Skill 3: `fhir-sql-builder-setup` — FHIR SQL Builder Automation
+
+**What went wrong:** We spent the longest single stretch (40+ minutes watching an analysis poll) because:
+- No documentation for the REST API at `/csp/fhirsql/api/ui/v1/...`
+- The first analysis errored (FHIR server not installed yet) and subsequent POSTs returned the old errored result
+- We didn't know `Ens.Director.StartProduction()` was required before data loading
+- The `HS.FHIRServer.Installer.InstallNamespace/InstallInstance` prerequisites weren't documented in the FSB context
+
+**What the skill does:** Given an IRIS for Health instance with FHIR data loaded:
+1. Checks prerequisites: `HS.FHIRServer.Installer` exists, production is running, FHIR endpoint exists
+2. Enables FSB CSP apps (`/csp/fhirsql/api/ui`, `/csp/fhirsql/api/repository`) with correct auth
+3. Grants `FSB_Admin/FSB_Analyst/FSB_Data_Steward` roles
+4. Drives the REST API: credentials → fhirrepository → analysis (poll with correct ID) → transformspec → projection
+5. Verifies `AFHIRData` tables are created
+
+**Key doc links to embed:**
+- https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=FHIRSQL
+- https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIR_server_install
+
+**Gaps this doesn't cover:** The REST API is entirely undocumented. The skill must encode the endpoint paths, request/response formats, and polling logic from our `FSBSetup.cls` experience.
+
+### Skill 4: `iris-configstore-wallet` — ConfigStore + Wallet Setup
+
+**What went wrong:** We wrote `ConfigStoreSetup.cls` from scratch because:
+- The `secret://` URI syntax was undocumented
+- The Wallet collection naming rules (`1(1"%",1A).(1AN,1"-",1"_")` — no dots!) caused `ReadyAI.Secrets` to fail validation
+- The `%ConfigStore.Configuration.Create` API signature (5 positional args: category, subcategory, subsubcategory, name, config) was hard to discover
+
+**What the skill does:** Given a provider name, model, and API key:
+1. Creates a Wallet collection with valid naming (replaces dots with hyphens)
+2. Stores the API key in the Wallet
+3. Creates a ConfigStore entry with `secret://` reference
+4. Verifies the round-trip: `init_chat_model` can resolve the config and instantiate the model
+
+**Key doc links to embed:**
+- https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=ROARS_secrets_mgmt
+- The EAP `langchain_SDK.md` (the ConfigStoreTest.cls pattern)
+- The EAP `ObjectScript_SDK_Guide.md` (Getting Started: API Key Setup)
+
+**Gaps this doesn't cover:** The `%ConfigStore.Configuration` class API is not documented on docs.intersystems.com (it's new in the AI Hub EAP). The `secret://` URI syntax is entirely undocumented anywhere.
+
+### Existing Skills That Should Be Updated
+
+| Skill | What to add |
+|---|---|
+| `iris-python-connection` | Add: "If connection fails with Access Denied, check `%Service_Bindings` AutheEnabled — must include password auth for non-%All users" |
+| `iris-kit-container` | Add: IRISHealth variant for FHIR/HealthShare use cases. Add: `iris-mcp-server` binary is in `dist/*/bin/` inside the tar |
+| `iris-objectscript-eval` | Add: After `zpm load`, routines may not be compiled — run `$system.OBJ.CompilePackage("Package","ck")` explicitly |
+| `ensemble-production` | Add: Production must be running before `HS.FHIRServer.Tools.DataLoader.SubmitResourceFiles` |
+
+### Remaining Documentation Gaps (No Existing Docs to Link To)
+
+These items have **no documentation anywhere** — not on docs.intersystems.com, not in the EAP, not in community posts:
+
+| Gap | What's needed | Who should write it |
+|---|---|---|
+| `%ConfigStore.Configuration` API | Class reference + Create/Get/Delete methods + category hierarchy | AI Hub / IRIS Platform team |
+| `secret://` URI syntax | How ConfigStore resolves Wallet references | AI Hub / IRIS Platform team |
+| `iris-mcp-server` WebSocket backchannel behavior | When large responses trigger binary framing vs text framing | MCP Server team |
+| FHIR SQL Builder REST API | Full endpoint reference for `/csp/fhirsql/api/ui/v1/*` | FHIR SQL Builder team |
+| `AutheEnabled` bitmask values for `Security.Applications` | What each integer value means (1, 4, 64, 96, etc.) and when to use which | IRIS Security docs team |
+| `%Wallet.Collection` naming validation rules | The PATTERN constraint and why dots are rejected | IRIS Platform team |
