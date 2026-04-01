@@ -1,0 +1,2 @@
+- 2026-03-31: Kept behavioral semantics unchanged by focusing simplification on duplicate constants, repeated fixture/mock setup, and connection cleanup paths (`finally` blocks) rather than changing prompt logic or tool call flow.
+- 2026-03-31: Updated Streamlit UI tests to assert against `text_input` instead of `number_input` to align with current page implementation and avoid false failures unrelated to simplification.

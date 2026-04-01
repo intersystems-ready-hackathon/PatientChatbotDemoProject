@@ -15,8 +15,7 @@
         Recurse="1"
         DispatchClass="ReadyAI.MCPService"
         MatchRoles=":%All"
-        PasswordAuthEnabled="1"
-        UnauthenticatedEnabled="1"
+        AutheEnabled="64"
        />
 
     </Module>

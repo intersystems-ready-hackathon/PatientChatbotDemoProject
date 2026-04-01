@@ -1,10 +1,13 @@
 [project]
 name = "readyai-app"
 version = "0.1.0"
-description = "Add your description here"
+description = "ReadyAI patient encounter briefing demo"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "langchain>=1.2.13",
     "langchain-mcp-adapters>=0.2.2",
+    "langchain-openai>=0.3",
+    "streamlit>=1.45",
+    "intersystems-irispython>=3.9",
 ]

@@ -1,14 +1,14 @@
 [[iris]]
 name = "local"
-server = { host = "localhost", port = 1972, username = "CSPSystem", password = "SYS" }
+server = { host = "localhost", port = 1972, username = "SuperUser", password = "SYS" }
 endpoints = [
     {path = "/mcp/readyai" }
 ]
 
 
 [pool]
-min_connections = 5
-max_connections = 10
+min_connections = 1
+max_connections = 3
 connection_timeout = 30
 
 [discovery]

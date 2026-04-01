@@ -88,7 +88,7 @@ Method QueryTable(tableName As %String, patientIds As %DynamicArray(ELEMENTTYPE=
 
         do response.%Set("PatientColumn", patientColumn)
 
-        set query = "SELECT * FROM "_..#PackageName_"."_tableName_" WHERE "_patientColumn_" = ?"
+        set query = "SELECT TOP 50 * FROM "_..#PackageName_"."_tableName_" WHERE "_patientColumn_" = ?"
         set statement = ##class(%SQL.Statement).%New()
         set status = statement.%Prepare(query)
         if $$$ISERR(status) {
@@ -107,7 +107,8 @@ Method QueryTable(tableName As %String, patientIds As %DynamicArray(ELEMENTTYPE=
 
                 for columnIndex=1:1:columnCount {
                     set columnName = columnNames(columnIndex)
-                    do row.%Set(columnName, resultSet.%Get(columnName))
+                    set cellVal = resultSet.%Get(columnName)
+                    do row.%Set(columnName, ##class(ReadyAI.SQLTools).SafeString(cellVal))
                 }
 
                 do rows.%Push(row)
@@ -176,13 +177,19 @@ Method GetConditionsList() As %DynamicObject
 
         while resultSet.%Next() {
             set conditionCode = resultSet.%Get("SnomedCode")
-            set conditionDescription = resultSet.%Get("Description")
+            set conditionDescription = ##class(ReadyAI.SQLTools).SafeString(resultSet.%Get("Description"))
             set condition = {"Code": (conditionCode), "Description": (conditionDescription)}
             do conditions.%Push(condition)
         }
 
         do response.%Set("Status", "OK")
         quit response
+}
+
+/// Escape non-ASCII characters to ASCII-safe form for safe JSON transport
+ClassMethod SafeString(pStr As %String) As %String
+{
+    quit $ZCVT(pStr, "O", "UTF8")
 }
 
 }
