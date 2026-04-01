@@ -9,31 +9,22 @@ SYS
  set r.SSLConfiguration = "ISC.FeatureTracker.SSL.Config"
  do r.Get("/packages/zpm/latest/installer")
  do $system.OBJ.LoadStream(r.HttpResponse.Data,"c")
- zpm "enable -community"
+
 
  // ---- Enable CallIn service ----
  do ##class(Security.Services).Get("%Service_CallIn",.prop)
  set prop("Enabled") = 1
  do ##class(Security.Services).Modify("%Service_CallIn",.prop)
 
- // ---- Create READYAI database and namespace ----
- set dbDir = "/usr/irissys/mgr/readyai/"
- do ##class(%Library.File).CreateDirectoryChain(dbDir)
- do ##class(SYS.Database).CreateDatabase(dbDir)
- set dbProps("Directory") = dbDir
- do ##class(Config.Databases).Create("READYAI",.dbProps)
- set nsProps("Globals") = "READYAI"
- set nsProps("Library") = "IRISLIB"
- set nsProps("Routines") = "READYAI"
- set nsProps("SysGlobals") = "IRISSYS"
- set nsProps("SysRoutines") = "IRISSYS"
- set nsProps("TempGlobals") = "IRISTEMP"
- do ##class(Config.Namespaces).Create("READYAI",.nsProps)
+ // ---- Create READYAI namespace Using HSLIB ----
+ zn "HSLIB"
+ set tSC=##class(HS.Util.Installer.Foundation).Install("READYAI",.pVars)
  write "READYAI namespace created",!
 
  // ---- Map IPM to READYAI and load IPM package ----
  // IPM (zpm load) registers /mcp/readyAI with PasswordAuth+Unauthenticated from module.xml
- zpm "enable -map -globally"
+ ZN "%SYS"
+ zpm "enable -community"
 
  zn "READYAI"
  zpm "load /home/irisowner/dev/ -v"

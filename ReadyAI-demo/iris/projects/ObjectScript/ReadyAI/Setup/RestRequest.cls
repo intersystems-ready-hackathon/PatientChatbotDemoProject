@@ -1,4 +1,4 @@
-Class Demo.READYAI.Setup.RestRequest Extends %RegisteredObject
+Class ReadyAI.Setup.RestRequest Extends %RegisteredObject
 {
 
 ClassMethod LocalPOSTRequest(resource As %String, filePath As %String) As %Status
@@ -41,7 +41,9 @@ ClassMethod LocalPOSTRequest(resource As %String, filePath As %String) As %Statu
 ClassMethod WaitForAnalysisComplete(id As %String)
 {
     for {
-        quit:..GetAnalysisStatus(id)="completed"
+        quit:..GetAnalysisStatus(id)=200
+        quit:..GetAnalysisStatus(id)=401
+        quit:..GetAnalysisStatus(id)=403
         write "Waiting...", !
         hang 2
     }
@@ -83,9 +85,20 @@ ClassMethod GetAnalysisStatus(id As %String) As %String
 
     set responseJson = {}.%FromJSON(responseText)
     set completionStatus = responseJson.status
+    
     write "Completion Status: ", completionStatus, !
 
-    Quit completionStatus
+    Quit httpRequest.HttpResponse.StatusCode
+}
+
+ClassMethod RunAll() As %Status
+{
+    Do ..LocalPOSTRequest("credentials", "/home/irisowner/dev/FHIR/SetupRequestBodies/credentials.body")
+    Do ..LocalPOSTRequest("fhirrepository", "/home/irisowner/dev/FHIR/SetupRequestBodies/fhirrepository.body")
+    Do ..LocalPOSTRequest("analysis", "/home/irisowner/dev/FHIR/SetupRequestBodies/analysis.body")
+    Do ..WaitForAnalysisComplete(1)
+    Do ..LocalPOSTRequest("transformspec", "/home/irisowner/dev/FHIR/SetupRequestBodies/transformspec.body")
+    Do ..LocalPOSTRequest("projection", "/home/irisowner/dev/FHIR/SetupRequestBodies/projection.body")
 }
 
 }

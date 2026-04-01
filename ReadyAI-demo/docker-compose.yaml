@@ -9,7 +9,7 @@ services:
     ports:
     - 1973:1972
     - 8888:8888
-    - 32791:80
+    - 32783:80
     volumes:
     - ./iris/projects:/home/irisowner/dev
     restart: unless-stopped
@@ -20,17 +20,6 @@ services:
       retries: 12
       start_period: 60s
 
-  mcp-server:
-    build:
-      context: ./iris
-    command: bash -c "cd /home/irisowner/dev && iris-mcp-server -c config.toml run"
-    depends_on:
-      iris:
-        condition: service_healthy
-    volumes:
-    - ./iris/projects:/home/irisowner/dev
-    network_mode: "service:iris"
-    restart: unless-stopped
 
   langchain:
     build:

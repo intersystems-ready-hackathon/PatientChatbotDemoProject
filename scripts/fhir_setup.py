@@ -39,20 +39,20 @@ def main():
             print(f"AFHIRData already has {count} tables. FHIR setup skipped.")
             return
 
-        subprocess.run(
-            [
-                "docker",
-                "cp",
-                "ReadyAI-demo/iris/projects/ObjectScript/ReadyAI/FSBSetup.cls",
-                "readyai-demo-iris-1:/tmp/FSBSetup.cls",
-            ],
-            check=True,
-        )
-        irispy.classMethodValue("%SYSTEM.OBJ", "Load", "/tmp/FSBSetup.cls", "ck")
-        print("Running FSBSetup.RunFHIR() — this takes 5-10 minutes...")
+        # subprocess.run(
+        #     [
+        #         "docker",
+        #         "cp",
+        #         "ReadyAI-demo/iris/projects/ObjectScript/ReadyAI/FSBSetup.cls",
+        #         "readyai-demo-iris-1:/tmp/FSBSetup.cls",
+        #     ],
+        #     check=True,
+        # )
+        # irispy.classMethodValue("%SYSTEM.OBJ", "Load", "/tmp/FSBSetup.cls", "ck")
+        print("Running FSBSetup.RunAll() — this takes 5-10 minutes...")
 
-        sc = irispy.classMethodValue("ReadyAI.FSBSetup", "RunFHIR")
-        print(f"RunFHIR completed: sc={sc}")
+        sc = irispy.classMethodValue("ReadyAI.Setup.FSBSetup", "RunAll")
+        print(f"RunAll completed: sc={sc}")
 
         print(f"AFHIRData tables created: {_afhir_table_count(cur)}")
     finally:

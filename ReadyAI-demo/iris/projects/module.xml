@@ -8,7 +8,6 @@
       <SourcesRoot>ObjectScript</SourcesRoot>
       <Resource Name="ReadyAI.PKG"/>
       <Resource Name="Examples.PKG"/>
-      <Resource Name="Setup.PKG"/>
       <Resource Name="RAG.PKG"/>
       <WebApplication
         Url="/mcp/readyAI"

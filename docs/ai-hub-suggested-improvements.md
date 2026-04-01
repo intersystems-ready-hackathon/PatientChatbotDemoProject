@@ -22,9 +22,9 @@ Compatibility would allow creation of a vector store using %AI.RAG.FastEmbed on 
 
 ## 3. %AI.RAG Inflexability
 
-In general, I find the %AI.RAG package quite inflexible - for example, to use the FastEmbed tool to create vectors without creating a knowledge-base tool, adding it to a tool manager, and querying against it. The FastEmbed tool  
+In general, I find the %AI.RAG package quite inflexible - for example, I can't find a way to use the FastEmbed tool to create vectors without creating a knowledge-base tool, adding it to a tool manager, and querying against it.  
 
-The RUST-based AllMiniLM implementation is impressively fast, but the inflexibility makes it difficult to use for all but the standard knowledgebase use case. Hybrid searches involving filtering on a column, don't seem to be possible. 
+The RUST-based AllMiniLM implementation is impressively fast, but the inflexibility makes it difficult to use for all but the standard knowledge-base workflow. Hybrid searches involving filtering on a column, don't seem to be possible. 
 
 
 ## 4. Query Tool 
