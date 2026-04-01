@@ -47,3 +47,6 @@ Class Sample.SQLQuerys extends %AI.QueryTool
 ```
 
 
+## Minor Cosmetic MCP thing: 
+
+When accessing a remote HTTP server with Langchain-mcp-adapters, every transaction finishes with `Session termination failed: 202`, without any sign of failure (tools execute fine). GPT-5.4 tells me that this is because the MCP standard OK response is 200, not 202. Doesn't cause any issue but looks a bit offputting. 
