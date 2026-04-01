@@ -35,9 +35,13 @@ These sections were accurate and directly applicable:
 
 ---
 
-## Priority 1: Blocking Gaps (Participants Will Fail Without These)
+## Part A: AI Hub EAP Documentation Gaps
 
-### 1. ConfigStore + Wallet: Storing API Keys Securely
+These gaps are specific to the AI Hub SDK, `iris-mcp-server`, `langchain-intersystems`, and ConfigStore — i.e., the content owned by the AI Hub team.
+
+### P1: Blocking
+
+#### 1. ConfigStore + Wallet: Storing API Keys Securely
 
 **Current state:** `langchain_SDK.md` references `ConfigStoreTest.cls` for setup but doesn't show the Wallet integration pattern. The `secret://` URI syntax for referencing Wallet secrets from ConfigStore is undocumented.
 
@@ -68,7 +72,7 @@ Do ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "readyai", llmCon
 - How `init_chat_model` resolves the secret at runtime
 - How to seed from an environment variable (the `OPENAI_API_KEY → Wallet → ConfigStore` pattern)
 
-### 2. `AutheEnabled=64` for MCP Web Applications
+#### 2. `AutheEnabled=64` for MCP Web Applications
 
 **Current state:** `MCP_Server_Examples.md` shows `AutheEnabled=64` on line 48 but doesn't explain WHY this specific value is required.
 
@@ -78,7 +82,7 @@ Do ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "readyai", llmCon
 
 > **Important:** Set `AutheEnabled=64` (delegated authentication) on the CSP web application. The `iris-mcp-server` uses the Web Gateway protocol (wgproto) for tool discovery, which authenticates via delegated session tokens — not HTTP Basic auth. Using `AutheEnabled=4` (Password only) will cause tool discovery to fail with 401.
 
-### 3. `langchain_intersystems` Whl Distribution
+#### 3. `langchain_intersystems` Whl Distribution
 
 **Current state:** The README says "download from the EAP portal" but `langchain_SDK.md` doesn't have a direct link or version-specific instructions.
 
@@ -91,35 +95,9 @@ Do ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "readyai", llmCon
 
 And note: the whl has no upper bound on `mcp`, so pip will install the latest. This is fine for Python 3.11 but causes issues on Python 3.14.
 
-### 4. Docker Image: IRIS vs IRISHealth
+### P2: Significant Time Savings
 
-**Current state:** The EAP README shows `iris-2026.2.0AI.141.0` (plain IRIS). No mention of IRISHealth.
-
-**What we discovered:** For FHIR SQL Builder, you MUST use an `IRISHealth` kit (e.g., `IRISHealth-2026.2.0AI.142.0`). The plain IRIS kit doesn't include `HS.FHIRServer.*`, `HS.HC.FHIRSQL.*`, or the FHIR SQL Builder UI.
-
-**What the doc needs:** In the README "Accessing the software" section:
-> If your use case involves FHIR data, download the **IRISHealth** variant of the kit. The plain IRIS kit does not include HealthShare classes (FHIR Server, FHIR SQL Builder). Both variants include the full AI Hub functionality.
-
----
-
-## Priority 2: Significant Time Savings
-
-### 5. FHIR SQL Builder Programmatic Setup
-
-**Current state:** Not documented in EAP docs at all. The FHIR SQL Builder has a REST API at `/csp/fhirsql/api/ui/v1/...` but there's no documentation for driving it programmatically.
-
-**What we had to build:** `FSBSetup.cls` which:
-1. Calls `HS.FHIRServer.Installer.InstallNamespace("READYAI")`
-2. Calls `HS.FHIRServer.Installer.InstallInstance(appKey, strategyClass, metadataPackages)`
-3. Starts the Ensemble production (`Ens.Director.StartProduction`)
-4. Loads FHIR data via `HS.FHIRServer.Tools.DataLoader.SubmitResourceFiles`
-5. Enables `/csp/fhirsql/api/ui` and `/csp/fhirsql/api/repository` CSP apps with `AutheEnabled` matching `/api/mgmnt`
-6. Grants `FSB_Admin`, `FSB_Analyst`, `FSB_Data_Steward` roles to users
-7. Drives the REST API: POST credentials → POST fhirrepository → POST analysis (wait for completion) → POST transformspec → POST projection
-
-**Recommendation:** Either document the FHIR SQL Builder REST API, or provide a reusable setup class like our `FSBSetup.cls`.
-
-### 6. `iris-mcp-server` Large Response Bug
+#### 4. `iris-mcp-server` Large Response Bug
 
 **Current state:** Not documented.
 
@@ -132,7 +110,7 @@ And note: the whl has no upper bound on `mcp`, so pip will install the latest. T
 >
 > This occurs when a tool response exceeds the WebSocket frame buffer. Limit query results (e.g., `SELECT TOP 50 ...`) or paginate large responses. A fix is planned for a future iris-mcp-server release.
 
-### 7. Agent Streaming Output Pattern
+#### 5. Agent Streaming Output Pattern
 
 **Current state:** `langchain_SDK.md` shows `agent.ainvoke()` (blocking) but not streaming.
 
@@ -152,7 +130,7 @@ async for chunk in agent.astream(
 
 **Key gotcha:** `stream_mode="messages"` yields ALL message types (AI, Tool, Human). Without filtering on `message.type`, raw tool JSON leaks into the UI output.
 
-### 8. Connection Pool Sizing for Limited Licenses
+#### 6. Connection Pool Sizing for Limited Licenses
 
 **Current state:** `MCP_Server_Guide.md` has a Connection Pool Sizing section but doesn't mention license constraints.
 
@@ -161,11 +139,62 @@ async for chunk in agent.astream(
 **Recommendation:** Add a note:
 > **Development licenses:** Set `min = 1` to avoid exhausting limited license slots. Each pool connection consumes one IRIS license slot.
 
+### P3: Nice to Have
+
+#### 7. `%AI.Tools.SQL` vs Custom SQL Tools
+
+The EAP docs show `%AI.Tools.SQL` as a built-in. We wrote custom `SQLTools.cls` instead because we needed FHIR-specific patient ID resolution and the `AFHIRData` schema prefix. In hindsight, we could have used `%AI.Tools.SQL` with `<Requirement Name="ReadOnly" Value="1"/>` and let the LLM figure out the schema.
+
+**Recommendation:** Add an example of `%AI.Tools.SQL` with a FHIR SQL Builder schema, showing that the built-in tool is often sufficient.
+
 ---
 
-## Priority 3: Nice to Have
+## Part B: Non-AI-Hub Gaps (IRIS Platform / HealthShare / Infrastructure)
 
-### 9. IPM Package with `WebApplication` Element
+These gaps are not in the AI Hub EAP's scope but caused significant friction during development. They relate to general IRIS platform behavior, HealthShare/FHIR SQL Builder, and Docker infrastructure.
+
+### P1: Blocking
+
+#### 8. Docker Image: IRIS vs IRISHealth
+
+**Current state:** The EAP README shows `iris-2026.2.0AI.141.0` (plain IRIS). No mention of IRISHealth.
+
+**What we discovered:** For FHIR SQL Builder, you MUST use an `IRISHealth` kit (e.g., `IRISHealth-2026.2.0AI.142.0`). The plain IRIS kit doesn't include `HS.FHIRServer.*`, `HS.HC.FHIRSQL.*`, or the FHIR SQL Builder UI.
+
+**Where this belongs:** The EAP README could add a note, but the real owner is the IRIS platform/packaging team. The IRISHealth AI variant should be listed on the EAP portal alongside the plain IRIS one.
+
+### P2: Significant Time Savings
+
+#### 9. FHIR SQL Builder Programmatic Setup
+
+**Current state:** Not documented anywhere — not in EAP docs, not in HealthShare docs, not in FHIR SQL Builder docs. The FHIR SQL Builder has a REST API at `/csp/fhirsql/api/ui/v1/...` but it's undocumented.
+
+**What we had to build:** `FSBSetup.cls` which:
+1. Calls `HS.FHIRServer.Installer.InstallNamespace("READYAI")`
+2. Calls `HS.FHIRServer.Installer.InstallInstance(appKey, strategyClass, metadataPackages)`
+3. Starts the Ensemble production (`Ens.Director.StartProduction`)
+4. Loads FHIR data via `HS.FHIRServer.Tools.DataLoader.SubmitResourceFiles`
+5. Enables `/csp/fhirsql/api/ui` and `/csp/fhirsql/api/repository` CSP apps
+6. Grants `FSB_Admin`, `FSB_Analyst`, `FSB_Data_Steward` roles to users
+7. Drives the REST API: POST credentials → POST fhirrepository → POST analysis (wait) → POST transformspec → POST projection
+
+**Where this belongs:** HealthShare / FHIR SQL Builder documentation. Not AI Hub EAP scope.
+
+#### 10. `%Service_Bindings` Auth for Non-Privileged Users
+
+**What we discovered:** Non-`%All` users cannot connect via the Python DB-API (`iris.connect`) unless `%Service_Bindings` has the correct authentication bits set. The `aicore-iris:140` base image had `AutheEnabled=96` (Kerberos-only) on `%Service_Bindings`, which meant only `%All` users could connect. We worked around this by giving Doctor/Nurse the `%All` role.
+
+**Where this belongs:** IRIS platform documentation on `%Service_Bindings` and the DB-API driver. Not AI Hub EAP scope.
+
+#### 11. Ensemble Production Must Be Started for FHIR Data Loading
+
+`Ens.Director.StartProduction()` must be called before `HS.FHIRServer.Tools.DataLoader.SubmitResourceFiles()`. Without it, the data loader silently does nothing.
+
+**Where this belongs:** HealthShare FHIR Server documentation.
+
+### P3: Nice to Have
+
+#### 12. IPM Package with `WebApplication` Element
 
 We used `module.xml` to auto-register the CSP web app during `zpm load`:
 ```xml
@@ -179,11 +208,7 @@ We used `module.xml` to auto-register the CSP web app during `zpm load`:
 
 This is cleaner than manual `Security.Applications.Create` calls. Worth documenting as a best practice.
 
-### 10. `%AI.Tools.SQL` vs Custom SQL Tools
-
-The EAP docs show `%AI.Tools.SQL` as a built-in. We wrote custom `SQLTools.cls` instead because we needed FHIR-specific patient ID resolution and the `AFHIRData` schema prefix. In hindsight, we could have used `%AI.Tools.SQL` with `<Requirement Name="ReadOnly" Value="1"/>` and let the LLM figure out the schema.
-
-**Recommendation:** Add an example of `%AI.Tools.SQL` with a FHIR SQL Builder schema, showing that the built-in tool is often sufficient.
+**Where this belongs:** IPM / ZPM documentation.
 
 ---
 
@@ -200,15 +225,24 @@ Credit where due — these sections saved us significant time:
 
 ## Action Items
 
-| # | Action | Owner | Priority |
+### Part A: AI Hub EAP team (Benjamin/Dave/Aohan)
+
+| # | Action | Suggested Owner | Priority |
 |---|---|---|---|
 | 1 | Add ConfigStore + Wallet API key pattern to `langchain_SDK.md` | Benjamin/Dave | P1 |
 | 2 | Add `AutheEnabled=64` explanation to MCP Server Guide | Benjamin/Dave | P1 |
 | 3 | Add explicit whl download instructions to `langchain_SDK.md` | Aohan | P1 |
-| 4 | Document IRIS vs IRISHealth distinction for FHIR | Benjamin/Dave | P1 |
-| 5 | Document FHIR SQL Builder programmatic setup | Gabriel/Tom | P2 |
-| 6 | Add large response workaround to MCP Server troubleshooting | MCP team | P2 |
-| 7 | Add agent streaming pattern to `langchain_SDK.md` | Aohan | P2 |
-| 8 | Add pool sizing note for dev licenses | Benjamin/Dave | P2 |
-| 9 | Document IPM WebApplication pattern | Gabriel | P3 |
-| 10 | Add `%AI.Tools.SQL` + FHIR example | Gabriel/Tom | P3 |
+| 4 | Add large response workaround to MCP Server troubleshooting | MCP team | P2 |
+| 5 | Add agent streaming pattern to `langchain_SDK.md` | Aohan | P2 |
+| 6 | Add pool sizing note for dev licenses | Benjamin/Dave | P2 |
+| 7 | Add `%AI.Tools.SQL` + FHIR example | Gabriel/Tom | P3 |
+
+### Part B: Outside AI Hub EAP scope (IRIS platform / HealthShare / IPM)
+
+| # | Action | Area | Priority |
+|---|---|---|---|
+| 8 | List IRISHealth AI variant on EAP portal | IRIS Packaging | P1 |
+| 9 | Document FHIR SQL Builder REST API for programmatic setup | HealthShare / FHIR SQL Builder team | P2 |
+| 10 | Document `%Service_Bindings` auth for non-%All DB-API users | IRIS Security docs | P2 |
+| 11 | Document `Ens.Director.StartProduction` prerequisite for FHIR data loading | HealthShare FHIR Server docs | P2 |
+| 12 | Document IPM `WebApplication` element for CSP app auto-registration | IPM / ZPM docs | P3 |
