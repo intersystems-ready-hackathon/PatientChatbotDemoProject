@@ -206,9 +206,9 @@ Credit where due — these sections saved us significant time:
 | 2 | Add `AutheEnabled=64` explanation to MCP Server Guide | Benjamin/Dave | P1 |
 | 3 | Add explicit whl download instructions to `langchain_SDK.md` | Aohan | P1 |
 | 4 | Document IRIS vs IRISHealth distinction for FHIR | Benjamin/Dave | P1 |
-| 5 | Document FHIR SQL Builder programmatic setup | Gabriel/Tim | P2 |
+| 5 | Document FHIR SQL Builder programmatic setup | Gabriel/Tom | P2 |
 | 6 | Add large response workaround to MCP Server troubleshooting | MCP team | P2 |
 | 7 | Add agent streaming pattern to `langchain_SDK.md` | Aohan | P2 |
 | 8 | Add pool sizing note for dev licenses | Benjamin/Dave | P2 |
 | 9 | Document IPM WebApplication pattern | Gabriel | P3 |
-| 10 | Add `%AI.Tools.SQL` + FHIR example | Gabriel/Tim | P3 |
+| 10 | Add `%AI.Tools.SQL` + FHIR example | Gabriel/Tom | P3 |
