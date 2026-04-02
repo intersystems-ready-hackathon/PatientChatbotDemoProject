@@ -100,7 +100,7 @@ Method QueryTable(tableName As %String, patientId As %Integer) As %DynamicObject
 
                 for columnIndex=1:1:columnCount {
                     set columnName = columnNames(columnIndex)
-                    do row.%Set(columnName, ##class(ReadyAI.Tools.Utils).SafeString(resultSet.%Get(columnName)))
+                    do row.%Set(columnName, ##class(Utils.SafeString).SafeString(resultSet.%Get(columnName)))
                 }
 
                 do rows.%Push(row)

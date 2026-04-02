@@ -1,93 +1,145 @@
-# ready2026-hackathon
+# READYAI 
 
+This repository contains the code for the READYAI x AIHub hackathon project. Much of the build process has been simplified or changed based on my preferences.
 
+The `./iris/projects` directory is mounted at `/home/irisowner/dev`. The ObjectScript tools, toolsets, classes and MCP servers are defined in the ReadyAI package. This should be automatically installed upon building (via IPM), as will an MCP Web Application. 
 
-## Getting started
+## Building AI-HUB 
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+To build the IRIS for Health AI Hub container you will need:
+    - A License Key 
+    - An IRIS for Health AI Hub build kit  (downloaded internally [here](https://kits-web.iscinternal.com/kits/unreleased/IRISHealth/2026.2.0AI/)) Build 142 is confirmed to work. Use the dockerubuntu single-file kit appropriate for your operating system (arm for Mx Mac)
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+The container build step is available ReadyAI-demo/iris4h-aihub-build. Note you will need to change the version argument to match your kit, and if you are using an arm version, there might be other small mismatches that need changing in the dockerfile. 
 
-## Add your files
-
-* [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.iscinternal.com/tdyar/ready2026-hackathon.git
-git branch -M main
-git push -uf origin main
+```bash 
+docker build -t i4h-aihub-142
 ```
 
-## Integrate with your tools
 
-* [Set up project integrations](https://gitlab.iscinternal.com/tdyar/ready2026-hackathon/-/settings/integrations)
+I've separated out the i4h-aihub container build to the actual demo container build to make things neater. It does lead to double building so you can always combine these if its inconvenient.
 
-## Collaborate with your team
+## Setting up the demo
 
-* [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+After you have built the base i4h-aihub container, you can build the demo container compose project. 
 
-## Test and Deploy
+First create a .env file with 
 
-Use the built-in continuous integration in GitLab.
+```dotenv
+OPENAI_API_KEY="sk-....."
+```
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+Then
 
-***
+```bash
+cd ReadyAI-demo
+docker-compose up -d --build
+```
 
-# Editing this README
+### Build Details
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+The IRIS build is handled by the `iris/Dockerfile` (general bash commands, nothing too interesting) and the `iris/iris.script` script. This script does a few notable things:
 
-## Suggestions for a good README
+- Installs IPM and loads all the `iris/projects/src` Objectscript Classes 
+- Creates an MCP service Web application using the IPM Install (the following lines from `iris/projects/module.xml`):
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```xml
+      <WebApplication
+        Url="/mcp/readyAI"
+        Recurse="1"
+        DispatchClass="ReadyAI.MCPService"
+        AutheEnabled="#{$$$AutheCache}"
+        Type="18" 
+       />  
+```
 
-## Name
-Choose a self-explaining name for your project.
+Type 18 defines its an MCP Server (and will appear in that applications portal) and $$$AutheCache is for Password Authentication
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+- Sets up the config store with
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```objectscript
+do ##class(Setup.ConfigStoreSetup).SetupWithAPIKey(__APIKEY__)
+```
+The \__API__ key is being replaced at build time in the dockerfile. 
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- Sets up Roles for two users with 
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+```objectscript
+do ##class(Setup.RolesSetup).Run()
+```
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## FHIR Server Build 
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+The FHIR Server build is done post container build because it takes a while (~5 mins)
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+FHIR SQL Builder is not documented for programatic use, but InterSystems Dach SEs worked out how to can create the Builder Spec from POST requests and created a helper class to do this, which is compiled with IPM during the build.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+The full FHIR Server and FHIR SQL Build can be done with:
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```bash
+docker exec -it iris iris session iris
+```
+```objectscript
+ZN "READYAI"
+Do ##class(Setup.FSBSetup).RunAll()
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+The SetupRequestBodies folder contains the FHIR-SQL Specification bodies, which are copied to /tmp/SetupRequestBodies as part of the customization build step.
 
-## License
-For open source projects, say how it is licensed.
+## Start the MCP server
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+On start-up, you can check the health and tools available on the MCP server at 
+
+- http://localhost:32783/mcp/readyAI/v1/health
+- http://localhost:32783/mcp/readyAI/v1/services
+
+To actually use the MCP server, the wgprotocol transport needs to be started using the `iris-mcp-server` binary: 
+
+```bash
+docker-compose exec -it iris bash 
+iris-mcp-server -c config.toml run
+```
+
+## Test MCP server
+
+You can run `langchain_discovery.py` locally (i.e. not in the container) to check the remote http server. This will print the available tools and invoke EchoUser to print the current user. 
+
+```bash
+pip install langchain langchain-mcp-adapters
+python3 langchain_discovery.py
+```
+
+If you would like to try the MCP server with Stdio transport (i.e. connect to the MCP from the same system):
+```bash
+docker-compose exec -it iris bash 
+
+cd mcp_test_stdio
+
+pip install --break-system-packages fastmcp
+python mcp_stdio_client_test.py
+```
+
+## Streamlit Side
+
+There is a second container running (technically third because we have web-gateway as well) with Python. This is our "Client" container which is connecting to the mcp server as a remote client via HTTP. 
+
+The demo app can be found at http://localhost:8501 . 
+
+Try logging in and running the app with: 
+
+- DScully / xfiles 
+- NJoy / pokemon 
+
+To show two different access layers. 
+
+
+## Tool Audits
+
+The MCP Server (or technically the toolset (ReadyAI.Toolset) it is serving) has an audit policy defined by: 
+
+```xml
+<Policies>
+    <Audit Class="ReadyAI.Audit.AuditTable" />
+</Policies>
+```

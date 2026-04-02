@@ -47,7 +47,8 @@ def login_page():
         try:
             conn = iris.connect(_IRIS_HOST, _IRIS_PORT, _IRIS_NAMESPACE, username, password)
             irispy = iris.createIRIS(conn)
-            roles = _normalize_roles(irispy.classMethodValue("Utils.GetRoles", "GetRoles"))
+            user_info = irispy.classMethodValue("Utils.EchoUser", "EchoUser")
+            roles = _normalize_roles(user_info.get("Roles", ""))
         except Exception as e:
             _clear_login_state()
             st.error(f"Login failed: {e}")

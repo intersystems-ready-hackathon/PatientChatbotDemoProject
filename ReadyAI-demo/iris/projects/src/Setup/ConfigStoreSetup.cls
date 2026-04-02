@@ -1,26 +1,5 @@
-Class ReadyAI.Setup.ConfigStoreSetup Extends %RegisteredObject
+Class Setup.ConfigStoreSetup Extends %RegisteredObject
 {
-
-ClassMethod Setup() As %Status
-{
-    set sc = $$$OK
-
-    Do ##class(%ConfigStore.Configuration).Delete("AI.LLM.readyai")
-
-    set llmConfig = {
-        "model_provider": "openai",
-        "model": "gpt-4o-mini"
-    }
-
-    set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "gpt-5-nano", llmConfig)
-    if $$$ISERR(sc) {
-        write "ERROR creating LLM config: ", $System.Status.GetErrorText(sc), !
-        quit sc
-    }
-
-    write "ConfigStore ready: AI.LLM.readyai (openai / gpt-4o-mini)", !
-    quit $$$OK
-}
 
 ClassMethod SetupWithAPIKey(pAPIKey As %String) As %Status
 {
@@ -44,9 +23,9 @@ ClassMethod SetupWithAPIKey(pAPIKey As %String) As %Status
 
     set $NAMESPACE = "READYAI"
 
-    Do ##class(%ConfigStore.Configuration).Delete("AI.LLM.readyai")
+    Do ##class(%ConfigStore.Configuration).Delete("AI.LLM.gpt-5-nano")
 
-    set llmConfig = {"model_provider": "openai", "model": "gpt-4o-mini", "api_key": "secret://ReadyAI-Secrets.OpenAI#api_key"}
+    set llmConfig = {"model_provider": "openai", "model": "gpt-5-nano", "api_key": "secret://ReadyAI-Secrets.OpenAI#api_key"}
 
     set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "gpt-5-nano", llmConfig)
     if $$$ISERR(sc) {
@@ -54,7 +33,7 @@ ClassMethod SetupWithAPIKey(pAPIKey As %String) As %Status
         quit sc
     }
 
-    write "ConfigStore ready: AI.LLM.readyai (openai / gpt-4o-mini, API key in Wallet)", !
+    write "ConfigStore ready: AI.LLM.readyai (openai / gpt-5-nano, API key in Wallet)", !
     quit $$$OK
 }
 

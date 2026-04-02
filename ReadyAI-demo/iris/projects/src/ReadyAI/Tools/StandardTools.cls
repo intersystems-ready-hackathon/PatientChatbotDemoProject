@@ -52,9 +52,9 @@ Method QueryPatientAllergies(PatientID As %Integer) As %DynamicObject
         while resultSet.%Next() {
             set allergyDescription = resultSet.%Get("AllergyDescription")
             set category = resultSet.%Get("Category")
-            set code = ##class(ReadyAI.Tools.Utils).SafeString(resultSet.%Get("Code"))
-            set criticality = ##class(ReadyAI.Tools.Utils).SafeString(resultSet.%Get("Criticality"))
-            set statusVerificationStatus = ##class(ReadyAI.Tools.Utils).SafeString(resultSet.%Get("StatusVerificationStatus"))
+            set code = ##class(Utils.SafeString).SafeString(resultSet.%Get("Code"))
+            set criticality = ##class(Utils.SafeString).SafeString(resultSet.%Get("Criticality"))
+            set statusVerificationStatus = ##class(Utils.SafeString).SafeString(resultSet.%Get("StatusVerificationStatus"))
             set allergyInfo = {"AllergyDescription": (allergyDescription), "Category": (category), "Code": (code), "Criticality": (criticality), "StatusVerificationStatus": (statusVerificationStatus)}
             do results.%Push(allergyInfo)
         }
@@ -86,7 +86,7 @@ Method QueryMedications(PatientId As %Integer) As %DynamicObject
         set resultSet = statement.%Execute(patientReference)
         while resultSet.%Next() {
             set medicationRequestAuthoredOn = resultSet.%Get("MedicationRequestAuthoredOn")
-            set medicationDescription = ##class(ReadyAI.Tools.Utils).SafeString(resultSet.%Get("MedicationDescription"))
+            set medicationDescription = ##class(Utils.SafeString).SafeString(resultSet.%Get("MedicationDescription"))
             set medicationInfo = {"MedicationRequestAuthoredOn": (medicationRequestAuthoredOn), "MedicationDescription": (medicationDescription)}
             do results.%Push(medicationInfo)
         }

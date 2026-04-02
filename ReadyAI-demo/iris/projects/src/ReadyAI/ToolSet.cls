@@ -1,4 +1,4 @@
-Class ReadyAI.Tools.ToolSet Extends %AI.ToolSet
+Class ReadyAI.ToolSet Extends %AI.ToolSet [compileafter=Utils.EchoUser]
 {
 
 XData Definition [ MimeType = application/xml ]
@@ -8,11 +8,9 @@ XData Definition [ MimeType = application/xml ]
             <Policies>
                 <Audit Class="ReadyAI.Audit.AuditTable" />
             </Policies>
-            <Include Class="Examples.EchoUser"/>
-
+            <Include Class="Utils.EchoUser"/>
 
             <Include Class="ReadyAI.Tools.StandardTools"/>
-
             
             <Include Class="ReadyAI.Tools.FHIRSQLQueryTools">
                 <Requirement Name="Role" Value="Doctor"/>

@@ -22,7 +22,6 @@ services:
   webgateway:
     image: containers.intersystems.com/intersystems/webgateway:2025.3
     hostname: localhost
-    container_name: iris-wg-2
     ports:
     - "32783:80"
     - "32784:443"
@@ -30,7 +29,7 @@ services:
     - ISC_CSP_CONF_FILE=/webgateway-shared/CSP.conf
     - ISC_CSP_INI_FILE=/webgateway-shared/CSP.ini
     volumes:
-    - ./iris/resources/webgateway:/webgateway-shared
+    - ./webgateway:/webgateway-shared
 
   langchain:
     build:

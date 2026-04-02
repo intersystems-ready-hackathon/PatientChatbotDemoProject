@@ -5,10 +5,10 @@
       <Name>ReadyAI</Name>
       <Version>1.0.1</Version>
       <Packaging>module</Packaging>
-      <SourcesRoot>ObjectScript</SourcesRoot>
+      <SourcesRoot>src</SourcesRoot>
+      <Resource Name="Utils.PKG"/>
+      <Resource Name="Setup.PKG"/>
       <Resource Name="ReadyAI.PKG"/>
-      <Resource Name="Examples.PKG"/>
-      <Resource Name="RAG.PKG"/>
       <WebApplication
         Url="/mcp/readyAI"
         Recurse="1"

@@ -35,10 +35,8 @@ SYS
  do $system.OBJ.CompilePackage("Examples","ck")
 
  // ---- Setup ConfigStore LLM config ----
- do ##class(ReadyAI.ConfigStoreSetup).Setup()
- // NOTE: FHIR SQL Builder setup (ReadyAI.FSBSetup.RunFHIR) is NOT run here
- // because it takes 30-40 minutes. Run it manually after first docker-compose up:
- //   python3 scripts/fhir_setup.py
+ do ##class(Setup.ConfigStoreSetup).SetupWithAPIKey("__APIKEY__")
+ do ##class(Setup.RolesSetup).Run()
 
  halt
 

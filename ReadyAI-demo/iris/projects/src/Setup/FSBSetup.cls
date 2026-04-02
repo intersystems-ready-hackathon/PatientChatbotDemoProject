@@ -1,4 +1,4 @@
-Class ReadyAI.Setup.FSBSetup Extends %RegisteredObject
+Class Setup.FSBSetup Extends %RegisteredObject
 {
 
 /// Description
@@ -68,7 +68,7 @@ ClassMethod RunAll() As %Status
     Do ..InstallFHIRRepo()
     Do ..LoadFHIRData()
     #; Do ..GrantFSBRoles()
-    Do ##class(ReadyAI.Setup.RestRequest).RunAll()
+    Do ##class(Setup.FSBRestRequest).RunAll()
     Quit $$$OK
 }
 

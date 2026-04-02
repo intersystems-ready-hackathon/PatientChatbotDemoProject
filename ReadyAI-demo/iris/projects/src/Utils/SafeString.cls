@@ -1,4 +1,4 @@
-Class ReadyAI.Tools.Utils Extends %RegisteredObject
+Class Utils.SafeString Extends %RegisteredObject
 {
 
 /// Escape non-ASCII characters to ASCII-safe form for safe JSON transport

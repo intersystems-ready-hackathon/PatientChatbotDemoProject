@@ -1,4 +1,4 @@
-Class ReadyAI.Setup.RestRequest Extends %RegisteredObject
+Class Setup.FSBRestRequest Extends %RegisteredObject
 {
 
 ClassMethod LocalPOSTRequest(resource As %String, filePath As %String) As %Status
@@ -41,9 +41,8 @@ ClassMethod LocalPOSTRequest(resource As %String, filePath As %String) As %Statu
 ClassMethod WaitForAnalysisComplete(id As %String)
 {
     for {
-        quit:..GetAnalysisStatus(id)=200
-        quit:..GetAnalysisStatus(id)=401
-        quit:..GetAnalysisStatus(id)=403
+        quit:..GetAnalysisStatus(id)="completed"
+        quit:..GetAnalysisStatus(id)="ERROR"
         write "Waiting...", !
         hang 2
     }
@@ -77,18 +76,22 @@ ClassMethod GetAnalysisStatus(id As %String) As %String
         Quit status
     }
 
-    set responseText = httpRequest.HttpResponse.Data.Read()
+   set responseText = httpRequest.HttpResponse.Data.Read()
 
     // Read the response
     Write "Response Code: ", httpRequest.HttpResponse.StatusCode, !
-    Write "Response Data: ", responseText, !
+    #; Write "Response Data: ", responseText, !
+
+    if httpRequest.HttpResponse.StatusCode '= 200 {
+        write "Error: Received non-200 response code", !
+        quit "ERROR"
+    }
 
     set responseJson = {}.%FromJSON(responseText)
     set completionStatus = responseJson.status
-    
     write "Completion Status: ", completionStatus, !
 
-    Quit httpRequest.HttpResponse.StatusCode
+    Quit completionStatus
 }
 
 ClassMethod RunAll() As %Status
