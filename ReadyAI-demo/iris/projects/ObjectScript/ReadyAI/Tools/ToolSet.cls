@@ -12,11 +12,11 @@ XData Definition [ MimeType = application/xml ]
 
 
             <Include Class="ReadyAI.Tools.StandardTools"/>
-            <Include Class="ReadyAI.Tools.FHIRSQLQueryTools">
-                <Requirement Name="Resource" Value="FullMedicalAccess"/>
-            </Include>
 
-                
+            
+            <Include Class="ReadyAI.Tools.FHIRSQLQueryTools">
+                <Requirement Name="Role" Value="Doctor"/>
+            </Include>
 </ToolSet>
 }
 

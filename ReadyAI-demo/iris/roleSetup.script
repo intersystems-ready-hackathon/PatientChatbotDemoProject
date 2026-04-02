@@ -8,18 +8,21 @@ do ##class(Security.Users).Delete("DScully")
 do ##class(Security.Roles).Delete("Nurse")
 do ##class(Security.Users).Delete("NJoy")
 
+do ##class(Security.Resources).Create("FullMedicalAccess")
+do ##class(Security.Resources).Create("OpenAIUser")
+
 
 do ##class(Security.Roles).Create("Doctor", "Roles group for full access to a patients medical records and history", "", "",  )
 
 do ##class(Security.Roles).Get("Doctor", .props)
-set props("Resources")="%Native_ClassExecution:U"
+set props("Resources")="%Native_ClassExecution:U,OpenAIUser:R,FullMedicalAccess:R"
 set sc = ##class(Security.Roles).Modify("Doctor", .props)
 
 do $SYSTEM.Status.DisplayError(sc)
 
 set props("FullName")= "Dana Scully"
-set props("Password")="XFiles"
-set props("Roles")="%All,Doctor"
+set props("Password")="xfiles"
+set props("Roles")="Doctor,%DB_READYAI,%SQL,%HS_DB_READYAI,FSB_Analyst"
 
 do ##class(Security.Users).Create("DScully", .props)
 
@@ -33,6 +36,6 @@ set sc = ##class(Security.Roles).Modify("Nurse", .props)
 
 set props("FullName")= "Nurse Joy"
 set props("Password")="pokemon"
-set props("Roles")="%All,Nurse"
+set props("Roles")="Nurse,,%HS_DB_READYAI,FSB_Analyst"
 
 do ##class(Security.Users).Create("NJoy", .props)

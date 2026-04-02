@@ -10,12 +10,12 @@ Method SearchForPatient(PatientSurname As %String) As %DynamicObject
         set status = statement.%Prepare(query)
         if $$$ISERR(status) {
             do $System.Status.DisplayError(status)
-            quit "Error preparing SQL statement"
+            quit {"status":"Error preparing SQL statement", "Details": ($System.Status.GetErrorText(status))}
         }
         set resultSet = statement.%Execute(PatientSurname)
         if $$$ISERR(status) {
             do $System.Status.DisplayError(status)
-            quit "Error executing SQL statement"
+            quit {"status":"Error executing SQL statement", "Details": ($System.Status.GetErrorText(status))}
         }
         set results = []
         while resultSet.%Next() {
@@ -41,12 +41,12 @@ Method QueryPatientAllergies(PatientID As %Integer) As %DynamicObject
         set status = statement.%Prepare(query)
         if $$$ISERR(status) {
             do $System.Status.DisplayError(status)
-            quit "Error preparing SQL statement"
+            quit {"status":"Error preparing SQL statement", "Details": ($System.Status.GetErrorText(status))}
         }
         set resultSet = statement.%Execute(patientReference)
         if $$$ISERR(status) {
             do $System.Status.DisplayError(status)
-            quit "Error executing SQL statement"
+            quit {"status":"Error executing SQL statement", "Details": ($System.Status.GetErrorText(status))}
         }
         set results = []
         while resultSet.%Next() {
@@ -73,14 +73,14 @@ Method QueryMedications(PatientId As %Integer) As %DynamicObject
         set status = statement.%Prepare(query)
         if $$$ISERR(status) {
             do $System.Status.DisplayError(status)
-            quit "Error preparing SQL statement"
+            quit {"status":"Error preparing SQL statement", "Details": ($System.Status.GetErrorText(status))}
         }
         set query = l1_l2_l3
         set statement = ##class(%SQL.Statement).%New()
         set status = statement.%Prepare(query)
         if $$$ISERR(status) {
             do $System.Status.DisplayError(status)
-            quit "Error executing SQL statement"
+            quit {"status":"Error executing SQL statement", "Details": ($System.Status.GetErrorText(status))}
         }
         set results = []
         set resultSet = statement.%Execute(patientReference)

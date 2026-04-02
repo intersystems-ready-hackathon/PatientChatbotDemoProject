@@ -7,8 +7,8 @@ from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 load_dotenv()
 
-AUTH_HEADER = base64.b64encode(b"SuperUser:SYS").decode("utf-8")
-# AUTH_HEADER = base64.b64encode(b"DScully:XFiles").decode("utf-8")
+# AUTH_HEADER = base64.b64encode(b"SuperUser:SYS").decode("utf-8")
+AUTH_HEADER = base64.b64encode(b"DScully:xfiles").decode("utf-8")
 # AUTH_HEADER = base64.b64encode(b"NJoy:pokemon").decode("utf-8")
 
 async def get_tools():
@@ -26,18 +26,28 @@ async def get_tools():
     for tool in tools: 
         print("- ", tool, "\n")
     print("Available MCP tools:")
+    
     for tool in sorted(tools, key=lambda item: item.name):
         if tool.name == "mcp_readyai_EchoUser":
-            out = await tool.ainvoke({})
-            print(out)
+            try:
+                out = await tool.ainvoke({})
+                print(out)
+            except Exception as e:
+                print(f"Error invoking {tool.name}: {e}")
         elif tool.name == "mcp_readyai_ListTables":
-            out = await tool.ainvoke({})
-            print(out)
+            try:
+                out = await tool.ainvoke({})
+                print(out)
+            except Exception as e:
+                print(f"Error invoking {tool.name}: {e}")
         
         elif tool.name == "mcp_readyai_QueryTable":
-            out = await tool.ainvoke({"patientId": 3, "tableName": "Observation"})
-            print(out)  
-       
+            try:
+                out = await tool.ainvoke({"patientId": 3, "tableName": "Observation"})
+                print(out)  
+            except Exception as e:
+                print(f"Error invoking {tool.name}: {e}")
+
         #     print(out)
         print(f"- {tool.name}")
 

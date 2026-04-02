@@ -93,7 +93,7 @@ Method QueryTable(tableName As %String, patientId As %Integer) As %DynamicObject
             quit response
         }
 
-        set resultSet = statement.%Execute(patientId)
+        set resultSet = statement.%Execute("Patient/"_patientId)
 
             while resultSet.%Next() {
                 set row = {}

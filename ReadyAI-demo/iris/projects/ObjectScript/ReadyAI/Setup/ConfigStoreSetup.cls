@@ -12,7 +12,7 @@ ClassMethod Setup() As %Status
         "model": "gpt-4o-mini"
     }
 
-    set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "readyai", llmConfig)
+    set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "gpt-5-nano", llmConfig)
     if $$$ISERR(sc) {
         write "ERROR creating LLM config: ", $System.Status.GetErrorText(sc), !
         quit sc
@@ -29,12 +29,12 @@ ClassMethod SetupWithAPIKey(pAPIKey As %String) As %Status
     New $NAMESPACE
     set $NAMESPACE = "%SYS"
 
-    Do ##class(Security.Resources).Create("ReadyAI.UseResource")
-    Do ##class(Security.Resources).Create("ReadyAI.EditResource")
+    Do ##class(Security.Resources).Create("OpenAIUser")
+    Do ##class(Security.Resources).Create("OpenAIAdminRole")
     Do ##class(%Wallet.KeyValue).Delete("ReadyAI-Secrets.OpenAI")
     Do ##class(%Wallet.Collection).Delete("ReadyAI-Secrets")
 
-    set collectionProps = {"UseResource": "ReadyAI.UseResource", "EditResource": "ReadyAI.EditResource"}
+    set collectionProps = {"UseResource": "OpenAIUser", "EditResource": "OpenAIAdminRole"}
     set sc = ##class(%Wallet.Collection).Create("ReadyAI-Secrets", collectionProps)
     if $$$ISERR(sc) { write "ERROR creating Wallet collection: ", $System.Status.GetErrorText(sc), !  quit sc }
 
@@ -48,7 +48,7 @@ ClassMethod SetupWithAPIKey(pAPIKey As %String) As %Status
 
     set llmConfig = {"model_provider": "openai", "model": "gpt-4o-mini", "api_key": "secret://ReadyAI-Secrets.OpenAI#api_key"}
 
-    set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "readyai", llmConfig)
+    set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "gpt-5-nano", llmConfig)
     if $$$ISERR(sc) {
         write "ERROR creating LLM config: ", $System.Status.GetErrorText(sc), !
         quit sc

@@ -223,11 +223,267 @@
           "RENAMED": "DocumentReferenceContentAttachmentContentType"
         }
       ]
+    },
+    {
+      "resourceType": "Encounter",
+      "columns": [
+        {
+          "name": "EncounterParticipantPeriodStart",
+          "type": "String",
+          "path": "Encounter.participant.period.start",
+          "index": false,
+          "dataIndex": false,
+          "length": 50
+        },
+        {
+          "name": "EncounterParticipantPeriodEnd",
+          "type": "String",
+          "path": "Encounter.participant.period.end",
+          "index": false,
+          "dataIndex": false,
+          "length": 50
+        },
+        {
+          "name": "EncounterTypeCodingCode",
+          "type": "String",
+          "path": "Encounter.type.coding.code",
+          "index": false,
+          "dataIndex": false,
+          "length": 10
+        },
+        {
+          "name": "EncounterTypeCodingDisplay",
+          "type": "String",
+          "path": "Encounter.type.coding.display",
+          "index": false,
+          "dataIndex": false,
+          "length": 100
+        },
+        {
+          "name": "Patient",
+          "type": "String",
+          "path": "Encounter.subject.reference",
+          "index": false,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "EncounterSubjectReference"
+        },
+        {
+          "name": "EncounterReasonCode",
+          "type": "String",
+          "path": "Encounter.reasonCode.coding.code",
+          "index": false,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "EncounterReasonCodeCodingCode"
+        },
+        {
+          "name": "EncounterReasonDisplay",
+          "type": "String",
+          "path": "Encounter.reasonCode.coding.display",
+          "index": false,
+          "dataIndex": false,
+          "length": 100,
+          "RENAMED": "EncounterReasonCodeCodingDisplay"
+        },
+        {
+          "name": "HospitalizationDischargeDisplay",
+          "type": "String",
+          "path": "Encounter.hospitalization.dischargeDisposition.coding.display",
+          "index": false,
+          "dataIndex": false,
+          "length": 100,
+          "RENAMED": "EncounterHospitalizationDischargeDispositionCodingDisplay"
+        },
+        {
+          "name": "EncounterServiceProviderDisplay",
+          "type": "String",
+          "path": "Encounter.serviceProvider.display",
+          "index": false,
+          "dataIndex": false,
+          "length": 100
+        }
+      ],
+      "subTables": []
+    },
+    {
+      "resourceType": "AllergyIntolerance",
+      "columns": [
+        {
+          "name": "Patient",
+          "type": "String",
+          "path": "AllergyIntolerance.patient.reference",
+          "index": false,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "AllergyIntolerancePatientReference"
+        },
+        {
+          "name": "Criticality",
+          "type": "String",
+          "path": "AllergyIntolerance.criticality",
+          "index": false,
+          "dataIndex": false,
+          "length": 10,
+          "RENAMED": "AllergyIntoleranceCriticality"
+        },
+        {
+          "name": "Category",
+          "type": "String",
+          "path": "AllergyIntolerance.category",
+          "index": false,
+          "dataIndex": false,
+          "length": 10,
+          "RENAMED": "AllergyIntoleranceCategory"
+        },
+        {
+          "name": "Code",
+          "type": "String",
+          "path": "AllergyIntolerance.code.coding.code",
+          "index": false,
+          "dataIndex": false,
+          "length": 10,
+          "RENAMED": "AllergyIntoleranceCodeCodingCode"
+        },
+        {
+          "name": "AllergyDescription",
+          "type": "String",
+          "path": "AllergyIntolerance.code.coding.display",
+          "index": false,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "AllergyIntoleranceCodeCodingDisplay"
+        },
+        {
+          "name": "VerificationStatus",
+          "type": "String",
+          "path": "AllergyIntolerance.verificationStatus.coding.code",
+          "index": false,
+          "dataIndex": false,
+          "length": 10,
+          "RENAMED": "AllergyIntoleranceVerificationStatusCodingCode"
+        },
+        {
+          "name": "Status",
+          "type": "String",
+          "path": "AllergyIntolerance.clinicalStatus.coding.code",
+          "index": false,
+          "dataIndex": false,
+          "length": 10,
+          "RENAMED": "AllergyIntoleranceClinicalStatusCodingCode"
+        }
+      ]
+    },
+    {
+      "resourceType": "CarePlan",
+      "columns": [
+        {
+          "name": "Patient",
+          "type": "String",
+          "path": "CarePlan.subject.reference",
+          "index": false,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "CarePlanSubjectReference"
+        },
+        {
+          "name": "CarePlanActivityDescription",
+          "type": "String",
+          "path": "CarePlan.activity.detail.code.coding.display",
+          "index": false,
+          "dataIndex": false,
+          "length": 100,
+          "RENAMED": "CarePlanActivityDetailCodeCodingDisplay"
+        },
+        {
+          "name": "CarePlanActivityCode",
+          "type": "String",
+          "path": "CarePlan.activity.detail.code.coding.code",
+          "index": false,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "CarePlanActivityDetailCodeCodingCode"
+        },
+        {
+          "name": "CarePlanPeriodStart",
+          "type": "String",
+          "path": "CarePlan.period.start",
+          "index": false,
+          "dataIndex": false,
+          "length": 50
+        },
+        {
+          "name": "CarePlanPeriodEnd",
+          "type": "String",
+          "path": "CarePlan.period.end",
+          "index": false,
+          "dataIndex": false,
+          "length": 50
+        },
+        {
+          "name": "CarePlanStatus",
+          "type": "String",
+          "path": "CarePlan.status",
+          "index": false,
+          "dataIndex": false,
+          "length": 10
+        },
+        {
+          "name": "CarePlanCategory",
+          "type": "String",
+          "path": "CarePlan.category.coding.display",
+          "index": false,
+          "dataIndex": false,
+          "length": 100,
+          "RENAMED": "CarePlanCategoryCodingDisplay"
+        },
+        {
+          "name": "CarePlanCategoryCode",
+          "type": "String",
+          "path": "CarePlan.category.coding.code",
+          "index": false,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "CarePlanCategoryCodingCode"
+        }
+      ]
+    },
+    {
+      "resourceType": "MedicationRequest",
+      "columns": [
+        {
+          "name": "Patient",
+          "type": "String",
+          "path": "MedicationRequest.subject.reference",
+          "index": true,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "MedicationRequestSubjectReference"
+        },
+        {
+          "name": "Code",
+          "type": "String",
+          "path": "MedicationRequest.medicationCodeableConcept.coding.code",
+          "index": true,
+          "dataIndex": false,
+          "length": 10,
+          "RENAMED": "MedicationRequestMedicationCodeableConceptCodingCode"
+        },
+        {
+          "name": "Description",
+          "type": "String",
+          "path": "MedicationRequest.medicationCodeableConcept.coding.display",
+          "index": true,
+          "dataIndex": false,
+          "length": 250,
+          "RENAMED": "MedicationRequestMedicationCodeableConceptCodingDisplay"
+        }
+      ]
     }
   ],
   "version": 1,
-  "scanStartDateTime": "2026-03-26T11:44:55Z",
+  "scanStartDateTime": "2026-03-31T08:26:28Z",
   "scanFHIRRepositoryName": "READYAIRepo",
   "id": 1,
-  "lastModified": "2026-03-26T11:50:04.361Z"
+  "lastModified": "2026-03-31T08:40:49.521Z"
 }

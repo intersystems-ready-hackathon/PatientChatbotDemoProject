@@ -3,6 +3,6 @@
   "hostname": "localhost",
   "port": "80",
   "sslConfig": "",
-  "credentialsId": "READYAIUser",
+  "credentialsId": "SuperUser",
   "repositoryURL": "/readyai/r4"
 }

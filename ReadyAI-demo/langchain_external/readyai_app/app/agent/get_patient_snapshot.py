@@ -12,13 +12,13 @@ _IRIS_HOST = os.environ.get("IRIS_HOST", "iris")
 _IRIS_PORT = int(os.environ.get("IRIS_PORT", "1972"))
 _IRIS_NAMESPACE = os.environ.get("IRIS_NAMESPACE", "READYAI")
 _MCP_URL = os.environ.get("MCP_URL", "http://iris:8888/mcp/readyai")
-_LLM_CONFIG_NAME = os.environ.get("LLM_CONFIG_NAME", "readyai")
+_LLM_CONFIG_NAME = os.environ.get("LLM_CONFIG_NAME", "gpt-5-nano")
 
 SYSTEM_PROMPT = (
-    "You are a helpful medical assistant generating concise patient snapshots for doctors and nurses. "
     "You have tools to query patient data from the hospital database. "
     "Tool accessibility varies by role: Doctors have access to all tools; Nurses have limited access. "
-    "When a tool returns an Unauthorised or forbidden error, continue and note the restriction in your final response."
+    "You can use EchoUser to confirm the user's identity and role. The metadata states the required role for each tool"
+        "and if a tool is inaccessible due to role restrictions, you should note this in your response. "
 )
 
 
@@ -73,7 +73,7 @@ class PatientSnapshotAgent:
                     if block["type"] == "text":
                         yield block["text"]
         except Exception as e:
-            yield f"\n\n⚠️ Error during agent execution: {e}"
+            yield f"\n\n Error during agent execution: {e}"
 
 
 async def main():
