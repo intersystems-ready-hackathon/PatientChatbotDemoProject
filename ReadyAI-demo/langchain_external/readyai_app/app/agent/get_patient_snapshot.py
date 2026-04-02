@@ -1,10 +1,13 @@
 import asyncio
 import base64
 import os
+from builtins import BaseExceptionGroup
 
 import iris
 from langchain.agents import create_agent
+from langchain.agents.middleware import ToolCallRequest, wrap_tool_call
 from langchain.messages import HumanMessage
+from langchain_core.messages import ToolMessage
 from langchain_intersystems.chat_models import init_chat_model
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
@@ -20,6 +23,40 @@ SYSTEM_PROMPT = (
     "You can use EchoUser to confirm the user's identity and role. The metadata states the required role for each tool"
         "and if a tool is inaccessible due to role restrictions, you should note this in your response. "
 )
+
+
+def _format_exception(exc: BaseException) -> str:
+    if isinstance(exc, BaseExceptionGroup):
+        nested_messages = []
+        for child in exc.exceptions:
+            child_message = _format_exception(child)
+            if child_message:
+                nested_messages.append(child_message)
+        if nested_messages:
+            return "; ".join(nested_messages)
+    message = str(exc).strip()
+    if message:
+        return f"{type(exc).__name__}: {message}"
+    return type(exc).__name__
+
+
+@wrap_tool_call
+async def _handle_tool_call_error(request: ToolCallRequest, handler):
+    try:
+        return await handler(request)
+    except Exception as exc:
+        tool_name = request.tool_call.get("name", "unknown_tool")
+        tool_call_id = request.tool_call.get("id", tool_name)
+        message = _format_exception(exc)
+        return ToolMessage(
+            content=(
+                f"Tool '{tool_name}' failed with {message}. "
+                "Continue without this tool and explain any resulting limitation to the user."
+            ),
+            name=tool_name,
+            tool_call_id=tool_call_id,
+            status="error",
+        )
 
 
 class PatientSnapshotAgent:
@@ -38,7 +75,12 @@ class PatientSnapshotAgent:
         conn.close()
 
         tools = await self.get_tools()
-        return create_agent(model=model, tools=tools, system_prompt=self.SYSTEM_PROMPT)
+        return create_agent(
+            model=model,
+            tools=tools,
+            system_prompt=self.SYSTEM_PROMPT,
+            middleware=[_handle_tool_call_error],
+        )
 
     async def get_tools(self):
         auth_header = base64.b64encode(
@@ -59,7 +101,7 @@ class PatientSnapshotAgent:
         try:
             agent = await self.get_snapshot_agent()
         except Exception as e:
-            yield f"Error initialising agent: {e}"
+            yield f"Error initialising agent: {_format_exception(e)}"
             return
         try:
             async for chunk in agent.astream(
@@ -73,7 +115,7 @@ class PatientSnapshotAgent:
                     if block["type"] == "text":
                         yield block["text"]
         except Exception as e:
-            yield f"\n\n Error during agent execution: {e}"
+            yield f"\n\n Error during agent execution: {_format_exception(e)}"
 
 
 async def main():

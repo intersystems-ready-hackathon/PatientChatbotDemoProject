@@ -3,6 +3,8 @@ import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from langchain.agents.middleware import ToolCallRequest
+from langchain_core.messages import ToolMessage
 from tests.conftest import requires_iris, USERS
 
 _APP_PATH = os.path.join(os.path.dirname(__file__), "..", "ReadyAI-demo", "langchain_external", "readyai_app", "app")
@@ -96,6 +98,7 @@ class TestPatientSnapshotAgentUnit:
             create_kwargs = mock_create.call_args
             passed_tools = create_kwargs[1].get("tools") if create_kwargs[1] else (create_kwargs[0][1] if len(create_kwargs[0]) > 1 else None)
             assert passed_tools == mock_tools
+            assert create_kwargs[1]["middleware"], "Tool error middleware should be registered"
 
     @pytest.mark.asyncio
     async def test_get_snapshot_agent_closes_iris_connection(self):
@@ -171,6 +174,44 @@ class TestPatientSnapshotAgentUnit:
             chunks = [c async for c in agent.stream_response("test")]
 
         assert chunks == ["Final answer."]
+
+    @pytest.mark.asyncio
+    async def test_tool_error_middleware_returns_error_tool_message(self):
+        from agent.get_patient_snapshot import _handle_tool_call_error
+
+        request = ToolCallRequest(
+            tool_call={"id": "call-123", "name": "mcp_readyai_QueryTable", "args": {"patientId": 1}},
+            tool=None,
+            state={},
+            runtime=MagicMock(),
+        )
+
+        async def _failing_handler(_request):
+            raise RuntimeError("database unavailable")
+
+        result = await _handle_tool_call_error.awrap_tool_call(request, _failing_handler)
+
+        assert isinstance(result, ToolMessage)
+        assert result.status == "error"
+        assert result.tool_call_id == "call-123"
+        assert "mcp_readyai_QueryTable" in result.content
+        assert "RuntimeError: database unavailable" in result.content
+
+    @pytest.mark.asyncio
+    async def test_stream_response_formats_exception_group_details(self):
+        from agent.get_patient_snapshot import PatientSnapshotAgent
+
+        agent = PatientSnapshotAgent("DScully", "XFiles")
+
+        with patch.object(
+            agent,
+            "get_snapshot_agent",
+            AsyncMock(side_effect=ExceptionGroup("unhandled errors in a TaskGroup", [ConnectionError("name resolution failed")])),
+        ):
+            chunks = [chunk async for chunk in agent.stream_response("test")]
+
+        assert len(chunks) == 1
+        assert "ConnectionError: name resolution failed" in chunks[0]
 
 
 @requires_iris
