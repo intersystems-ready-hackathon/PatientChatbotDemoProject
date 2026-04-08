@@ -13,3 +13,4 @@ ReadyAI-demo/langchain_external/readyai_app/dist/
 ReadyAI-demo/iris4h-aicore-build/*.tar.gz
 ReadyAI-demo/iris4h-aicore-build/keys/
 *.env.example
+~$*
