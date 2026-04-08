@@ -8,8 +8,11 @@ Method ListTables() As %DynamicObject
 {
         Set sc = $$$OK
 
-
-        set query = "SELECT JSON_ARRAYAGG(JSON_OBJECT('TABLE_SCHEMA':TABLE_SCHEMA, 'TABLE_NAME':TABLE_NAME)) AS tables FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='"_..#PackageName_"'"
+        set l1 = "SELECT JSON_ARRAYAGG(JSON_OBJECT"
+        set l2 = "('TABLE_SCHEMA':TABLE_SCHEMA, 'TABLE_NAME':TABLE_NAME)) "
+        set l3 = "AS tables FROM INFORMATION_SCHEMA.TABLES "
+        set l4 = "WHERE TABLE_SCHEMA='"_..#PackageName_"'"
+        set query = l1_l2_l3_l4
         set statement = ##class(%SQL.Statement).%New()
         set status = statement.%Prepare(query)
 
@@ -19,7 +22,6 @@ Method ListTables() As %DynamicObject
             quit sc
         }
         set resultSet = statement.%Execute()
-
 
         do resultSet.%Next()
         set tables = resultSet.%Get("tables")

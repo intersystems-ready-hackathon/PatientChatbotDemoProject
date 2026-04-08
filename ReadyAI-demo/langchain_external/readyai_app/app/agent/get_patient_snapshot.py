@@ -71,6 +71,8 @@ class PatientSnapshotAgent:
 
     async def get_snapshot_agent(self):
         conn = self._iris_conn()
+
+        
         model = init_chat_model(_LLM_CONFIG_NAME, conn)
         conn.close()
 
@@ -86,6 +88,7 @@ class PatientSnapshotAgent:
         auth_header = base64.b64encode(
             f"{self.username}:{self.password}".encode("utf-8")
         ).decode("utf-8")
+
         client = MultiServerMCPClient(
             {
                 "readyai": {
@@ -95,14 +98,15 @@ class PatientSnapshotAgent:
                 }
             }
         )
-        return await client.get_tools()
+        try:
+            tools = await client.get_tools()
+        except Exception as e:
+            raise RuntimeError(f"Failed to retrieve tools from MCP: {(e)} \n\n Have you started the iris-mcp-server transport?") from e
+        return tools
 
     async def stream_response(self, prompt: str):
-        try:
-            agent = await self.get_snapshot_agent()
-        except Exception as e:
-            yield f"Error initialising agent: {_format_exception(e)}"
-            return
+        
+        agent = await self.get_snapshot_agent()
         try:
             async for chunk in agent.astream(
                 {"messages": [HumanMessage(content=prompt)]},
@@ -115,7 +119,7 @@ class PatientSnapshotAgent:
                     if block["type"] == "text":
                         yield block["text"]
         except Exception as e:
-            yield f"\n\n Error during agent execution: {_format_exception(e)}"
+            yield f"\n\n Error during agent execution: {e}"
 
 
 async def main():

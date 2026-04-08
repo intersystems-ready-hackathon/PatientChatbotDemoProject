@@ -477,6 +477,15 @@
           "dataIndex": false,
           "length": 250,
           "RENAMED": "MedicationRequestMedicationCodeableConceptCodingDisplay"
+        },
+        {
+          "name": "AuthoredOn",
+          "type": "String",
+          "path": "MedicationRequest.authoredOn",
+          "index": false,
+          "dataIndex": false,
+          "length": 50,
+          "RENAMED": "AuthoredOn"
         }
       ]
     }

@@ -48,7 +48,7 @@ def login_page():
             conn = iris.connect(_IRIS_HOST, _IRIS_PORT, _IRIS_NAMESPACE, username, password)
             irispy = iris.createIRIS(conn)
             user_info = irispy.classMethodValue("Utils.EchoUser", "EchoUser")
-            roles = _normalize_roles(user_info.get("Roles", ""))
+            roles = _normalize_roles(user_info.get("Roles"))
         except Exception as e:
             _clear_login_state()
             st.error(f"Login failed: {e}")
@@ -65,12 +65,13 @@ def login_page():
         st.rerun()
 
 
-if st.session_state["logged_in"] and "Doctor" in st.session_state["Roles"]:
+if st.session_state["logged_in"] and ("Doctor" in st.session_state["Roles"] or "Nurse" in st.session_state["Roles"]):
     st.navigation([_SNAPSHOT_PAGE], position="hidden").run()
+
 else:
     login_page()
 
-if st.session_state["logged_in"] and "Doctor" not in st.session_state["Roles"]:
+if st.session_state["logged_in"] and "Doctor" not in st.session_state["Roles"] and "Nurse" not in st.session_state["Roles"]:
     st.warning(f"Logged in as {st.session_state['Username']} with roles: {', '.join(st.session_state['Roles'])}.")
     st.warning("You do not have access to the patient snapshot feature. Talk to your administrator if you think this is an error.")
     if st.button("Log out"):

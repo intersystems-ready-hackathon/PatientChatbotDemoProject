@@ -1,6 +1,9 @@
 Class Setup.FSBRestRequest Extends %RegisteredObject
 {
 
+/// TCP port for Web Server
+Parameter PORT = 52773;
+
 ClassMethod LocalPOSTRequest(resource As %String, filePath As %String) As %Status
 {
     // Create an HTTP request object
@@ -9,7 +12,7 @@ ClassMethod LocalPOSTRequest(resource As %String, filePath As %String) As %Statu
     // Set the target URL
     Set httpRequest.Server = "localhost"
     Set httpRequest.Https = 0 
-    Set httpRequest.Port = 80
+    Set httpRequest.Port = ..#PORT
 
     // Set the request headers (optional)
     Do httpRequest.SetHeader("Content-Type", "application/json")
@@ -42,7 +45,7 @@ ClassMethod WaitForAnalysisComplete(id As %String)
 {
     for {
         quit:..GetAnalysisStatus(id)="completed"
-        quit:..GetAnalysisStatus(id)="ERROR"
+        quit:..GetAnalysisStatus(id)="errored"
         write "Waiting...", !
         hang 2
     }
@@ -58,7 +61,7 @@ ClassMethod GetAnalysisStatus(id As %String) As %String
     // Set the target URL
     Set httpRequest.Server = "localhost"
     Set httpRequest.Https = 0 
-    Set httpRequest.Port = 80
+    Set httpRequest.Port = ..#PORT
 
     // Set the request headers (optional)
     Do httpRequest.SetHeader("Content-Type", "application/json")
@@ -84,7 +87,7 @@ ClassMethod GetAnalysisStatus(id As %String) As %String
 
     if httpRequest.HttpResponse.StatusCode '= 200 {
         write "Error: Received non-200 response code", !
-        quit "ERROR"
+        quit "errored"
     }
 
     set responseJson = {}.%FromJSON(responseText)

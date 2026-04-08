@@ -1,4 +1,4 @@
-FROM i4h-aihub-142
+FROM i4h-comm-aihub-144
 
 ENV IRISUSERNAME "SuperUser"
 ENV IRISPASSWORD "SYS"
@@ -11,7 +11,7 @@ WORKDIR /home/irisowner/dev
 COPY ./iris.script /opt/irisbuild/iris.script
 COPY ./fhirsampledata/patients /tmp/fhirdata
 COPY ./projects .
-
+ARG OPENAI_API_KEY
 RUN sed -i "s|__APIKEY__|${OPENAI_API_KEY}|g" /opt/irisbuild/iris.script
 
 ENV IRISNAMESPACE "READYAI"

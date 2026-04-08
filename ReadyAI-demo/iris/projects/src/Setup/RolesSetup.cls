@@ -10,6 +10,8 @@ ClassMethod Run() As %Status
     do ##class(Security.Users).Delete("DScully")
     do ##class(Security.Roles).Delete("Nurse")
     do ##class(Security.Users).Delete("NJoy")
+    
+    do ##class(Security.Users).Delete("Test")
 
     do ##class(Security.Resources).Create("FullMedicalAccess")
     do ##class(Security.Resources).Create("OpenAIUser")
@@ -20,8 +22,8 @@ ClassMethod Run() As %Status
     do ##class(Security.Roles).Get("Doctor", .props)
     set props("Resources")="%Native_ClassExecution:U,OpenAIUser:R,FullMedicalAccess:R"
     set sc = ##class(Security.Roles).Modify("Doctor", .props)
-
     do $SYSTEM.Status.DisplayError(sc)
+    kill props
 
     set props("FullName")= "Dana Scully"
     set props("Password")="xfiles"
@@ -29,19 +31,29 @@ ClassMethod Run() As %Status
 
     do ##class(Security.Users).Create("DScully", .props)
 
+    w "Doctor user DScully created with access to patient records and OpenAI API",!
 
 
-
+    kill props
     do ##class(Security.Roles).Create("Nurse", "Roles group for partial access to a patients medical history", "", "",  )
     do ##class(Security.Roles).Get("Nurse", .props)
-    set props("Resources")="%Native_ClassExecution:U"
+    set props("Resources")="%Native_ClassExecution:U,OpenAIUser:R"
     set sc = ##class(Security.Roles).Modify("Nurse", .props)
 
+    kill props
     set props("FullName")= "Nurse Joy"
     set props("Password")="pokemon"
-    set props("Roles")="Nurse,,%HS_DB_READYAI,FSB_Analyst"
+    set props("Roles")="Nurse,%HS_DB_READYAI,FSB_Analyst"
 
     do ##class(Security.Users).Create("NJoy", .props)
+    w "Nurse user NJoy created with partial access to patient records",!
+
+    kill props 
+
+    set props("Password")="1234"
+    set props("Resources")="%Native_ClassExecution:U"
+    do ##class(Security.Users).Create("Test", .props)
+    w "Test user created with no roles",!
 }
 
 }

@@ -1,4 +1,4 @@
-Class ReadyAI.ToolSet Extends %AI.ToolSet [compileafter=Utils.EchoUser]
+Class ReadyAI.ToolSet Extends %AI.ToolSet [ DependsOn=(ReadyAI.Tools.StandardTools,ReadyAI.Tools.FHIRSQLQueryTools) ]
 {
 
 XData Definition [ MimeType = application/xml ]
@@ -8,7 +8,9 @@ XData Definition [ MimeType = application/xml ]
             <Policies>
                 <Audit Class="ReadyAI.Audit.AuditTable" />
             </Policies>
-            <Include Class="Utils.EchoUser"/>
+            <Tool Name="EchoUser" Method="EchoUser" >
+                <Description>Echo the current user's username and roles back to them.</Description>
+            </Tool>
 
             <Include Class="ReadyAI.Tools.StandardTools"/>
             
@@ -16,6 +18,13 @@ XData Definition [ MimeType = application/xml ]
                 <Requirement Name="Role" Value="Doctor"/>
             </Include>
 </ToolSet>
+}
+
+ClassMethod EchoUser() As %DynamicObject
+{
+        set username = $USERNAME
+        set roles = $ROLES
+        Return {"Username": (username), "Roles": (roles)}
 }
 
 }

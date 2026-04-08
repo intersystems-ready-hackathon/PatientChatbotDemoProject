@@ -34,8 +34,10 @@ SYS
  do $system.OBJ.CompilePackage("Utils","ck")
  do $system.OBJ.CompilePackage("Examples","ck")
 
+ set apikey = "__APIKEY__" 
+ write "setting up configstore with OpenAI API Key:"_apikey
  // ---- Setup ConfigStore LLM config ----
- do ##class(Setup.ConfigStoreSetup).SetupWithAPIKey("__APIKEY__")
+ do ##class(Setup.ConfigStoreSetup).SetupWithAPIKey(apikey)
  do ##class(Setup.RolesSetup).Run()
 
  halt

@@ -2,13 +2,12 @@ services:
   iris:
     build:
       context: ./iris
-    env_file:
-      - .env
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      args:
+        OPENAI_API_KEY: ${OPENAI_API_KEY}
     ports:
     - 1973:1972
     - 8888:8888
+    - 32773:52773
     volumes:
     - ./iris/projects:/home/irisowner/dev
     restart: unless-stopped
@@ -19,17 +18,17 @@ services:
       retries: 12
       start_period: 60s
 
-  webgateway:
-    image: containers.intersystems.com/intersystems/webgateway:2025.3
-    hostname: localhost
-    ports:
-    - "32783:80"
-    - "32784:443"
-    environment:
-    - ISC_CSP_CONF_FILE=/webgateway-shared/CSP.conf
-    - ISC_CSP_INI_FILE=/webgateway-shared/CSP.ini
-    volumes:
-    - ./webgateway:/webgateway-shared
+  # webgateway:
+  #   image: containers.intersystems.com/intersystems/webgateway:2025.3
+  #   hostname: localhost
+  #   ports:
+  #   - "32783:80"
+  #   - "32784:443"
+  #   environment:
+  #   - ISC_CSP_CONF_FILE=/webgateway-shared/CSP.conf
+  #   - ISC_CSP_INI_FILE=/webgateway-shared/CSP.ini
+  #   volumes:
+  #   - ./webgateway:/webgateway-shared
 
   langchain:
     build:

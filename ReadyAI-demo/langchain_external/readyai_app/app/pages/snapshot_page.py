@@ -11,7 +11,7 @@ if not st.session_state.get("logged_in") or not USER:
     st.error("Please log in before generating a patient snapshot.")
     st.stop()
 
-if "Doctor" not in ROLES:
+if "Doctor" not in ROLES and "Nurse" not in ROLES:
     st.error("You do not have access to the patient snapshot page.")
     st.stop()
 

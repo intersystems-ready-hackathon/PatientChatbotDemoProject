@@ -1,7 +1,7 @@
 {
   "name": "READYAIRepo",
   "hostname": "localhost",
-  "port": "80",
+  "port": "52773",
   "sslConfig": "",
   "credentialsId": "SuperUser",
   "repositoryURL": "/readyai/r4"

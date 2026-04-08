@@ -35,7 +35,7 @@ Method QueryPatientAllergies(PatientID As %Integer) As %DynamicObject
 
         set patientReference = "Patient/"_PatientID
         set l1 = "SELECT TOP 50 AllergyDescription, Category, Code, Criticality, "
-        set l2 = "StatusVerificationStatus FROM AFHIRData.AllergyIntolerance WHERE Patient=?"
+        set l2 = "Status, VerificationStatus FROM AFHIRData.AllergyIntolerance WHERE Patient=?"
         set query = l1_l2
         set statement = ##class(%SQL.Statement).%New()
         set status = statement.%Prepare(query)
@@ -65,10 +65,10 @@ Method QueryPatientAllergies(PatientID As %Integer) As %DynamicObject
 Method QueryMedications(PatientId As %Integer) As %DynamicObject
 {
         set patientReference = "Patient/"_PatientId
-        set l1 = "SELECT TOP 50 MedicationRequestAuthoredOn, MedicationDescription, "
-        set l2 = " FROM AFHIRData.MedicationRequest WHERE Patient=?"
-        set l3 = "ORDER BY MedicationRequestAuthoredOn DESC" 
-        set query = l1_l2
+        set l1 = "SELECT TOP 50 Description, AuthoredOn "
+        set l2 = "FROM AFHIRData.MedicationRequest WHERE Patient=?"
+        set l3 = "ORDER BY AuthoredOn DESC" 
+        set query = l1_l2_l3
         set statement = ##class(%SQL.Statement).%New()
         set status = statement.%Prepare(query)
         if $$$ISERR(status) {
@@ -85,8 +85,8 @@ Method QueryMedications(PatientId As %Integer) As %DynamicObject
         set results = []
         set resultSet = statement.%Execute(patientReference)
         while resultSet.%Next() {
-            set medicationRequestAuthoredOn = resultSet.%Get("MedicationRequestAuthoredOn")
-            set medicationDescription = ##class(Utils.SafeString).SafeString(resultSet.%Get("MedicationDescription"))
+            set medicationRequestAuthoredOn = resultSet.%Get("AuthoredOn")
+            set medicationDescription = ##class(Utils.SafeString).SafeString(resultSet.%Get("Description"))
             set medicationInfo = {"MedicationRequestAuthoredOn": (medicationRequestAuthoredOn), "MedicationDescription": (medicationDescription)}
             do results.%Push(medicationInfo)
         }
