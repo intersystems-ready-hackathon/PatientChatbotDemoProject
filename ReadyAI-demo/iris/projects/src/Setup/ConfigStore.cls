@@ -28,17 +28,17 @@ ClassMethod SetupWithAPIKey(pAPIKey As %String) As %Status
 
     set $NAMESPACE = "READYAI"
 
-    Do ##class(%ConfigStore.Configuration).Delete("AI.LLM.readyai")
+    Do ##class(%ConfigStore.Configuration).Delete("AI.LLM.gpt-5-nano")
 
     set llmConfig = {"model_provider": "openai", "model": "gpt-5-nano", "api_key": "secret://ReadyAI-Secrets.OpenAI#api_key"}
 
-    set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "readyai", llmConfig)
+    set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "gpt-5-nano", llmConfig)
     if $$$ISERR(sc) {
         write "ERROR creating LLM config: ", $System.Status.GetErrorText(sc), !
         quit sc
     }
 
-    write "ConfigStore ready: AI.LLM.readyai (openai / gpt-5-nano, API key in Wallet)", !
+    write "ConfigStore ready: AI.LLM.gpt-5-nano (openai / gpt-5-nano, API key in Wallet)", !
     quit $$$OK
 }
 

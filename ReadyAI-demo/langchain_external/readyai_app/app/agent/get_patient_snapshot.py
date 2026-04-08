@@ -25,6 +25,12 @@ SYSTEM_PROMPT = (
 )
 
 
+def _tool_attr(tool, name: str, default=None):
+    if isinstance(tool, dict):
+        return tool.get(name, default)
+    return getattr(tool, name, default)
+
+
 def _format_exception(exc: BaseException) -> str:
     if isinstance(exc, BaseExceptionGroup):
         nested_messages = []
@@ -103,6 +109,25 @@ class PatientSnapshotAgent:
         except Exception as e:
             raise RuntimeError(f"Failed to retrieve tools from MCP: {(e)} \n\n Have you started the iris-mcp-server transport?") from e
         return tools
+
+    async def build_tools_access_prompt(self) -> str:
+        tools = await self.get_tools()
+        tool_lines = []
+
+        for tool in tools:
+            name = _tool_attr(tool, "name", "unknown_tool")
+            description = _tool_attr(tool, "description", "") or "No description provided."
+            tool_lines.append(f"- {name}: {description}")
+
+        available_tools = "\n".join(tool_lines) if tool_lines else "- No tools are currently available."
+
+        return (
+            "Tell the signed-in user which tools you can access right now. "
+            "Base your answer only on the tool list below. "
+            "List the available tools, briefly explain what each tool is for, and mention if access appears limited by role. "
+            "Do not invent tools or capabilities beyond this list.\n\n"
+            f"Accessible tools:\n{available_tools}"
+        )
 
     async def stream_response(self, prompt: str):
         
