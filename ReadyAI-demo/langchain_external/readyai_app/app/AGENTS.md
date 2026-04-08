@@ -47,12 +47,12 @@ main.py: iris.connect(IRIS_HOST, IRIS_PORT, IRIS_NAMESPACE, user, pass)
 
 ```objectscript
 zn "READYAI"
-do ##class(ReadyAI.ConfigStoreSetup).Setup()
+do ##class(Setup.ConfigStore).Setup()
 ```
 
 Or with API key stored in Wallet:
 ```objectscript
-do ##class(ReadyAI.ConfigStoreSetup).SetupWithAPIKey("sk-...")
+do ##class(Setup.ConfigStore).SetupWithAPIKey("sk-...")
 ```
 
 ## Conventions

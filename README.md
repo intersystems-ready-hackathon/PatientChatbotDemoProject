@@ -1,10 +1,23 @@
 # READYAI 
 
-This repository contains the code for the READYAI x AIHub hackathon project. Much of the build process has been simplified or changed based on my preferences.
+This repository contains the code for the READYAI hackathon demo project.
 
 The `./iris/projects` directory is mounted at `/home/irisowner/dev`. The ObjectScript tools, toolsets, classes and MCP servers are defined in the ReadyAI package. This should be automatically installed upon building (via IPM), as will an MCP Web Application. 
 
 ## Building AI-HUB 
+
+
+---
+Update! I changed the build to use version 144 and the community edition - the main change this causes is WebGateway is no longer required and the http port is back to the standard 52773 rather than 80. 
+
+To use a licensed version a couple of changes are required: 
+    - Change the PORT parameter in FSBRestRequests to 80 
+    - Change the port in the fhirrespository.body to 80
+    
+I also found that the REST requests didn't work during the container build for some reason. The StandardToolSet class depends on the tables being built and if this doesn't compile none of the IPM package will be installed, so you may need to manually run everything in the iris.script file.  
+
+---
+
 
 To build the IRIS for Health AI Hub container you will need:
     - A License Key 
@@ -16,8 +29,8 @@ The container build step is available ReadyAI-demo/iris4h-aihub-build. Note you 
 docker build -t i4h-aihub-142
 ```
 
-
 I've separated out the i4h-aihub container build to the actual demo container build to make things neater. It does lead to double building so you can always combine these if its inconvenient.
+
 
 ## Setting up the demo
 
@@ -40,6 +53,8 @@ docker-compose up -d --build
 
 The IRIS build is handled by the `iris/Dockerfile` (general bash commands, nothing too interesting) and the `iris/iris.script` script. This script does a few notable things:
 
+- Installs the READYAI namespace
+- Sets up FHIR Server and FHIRSQL builer with `do ##class(Setup.FSB).RunAll()`
 - Installs IPM and loads all the `iris/projects/src` Objectscript Classes 
 - Creates an MCP service Web application using the IPM Install (the following lines from `iris/projects/module.xml`):
 
@@ -58,19 +73,17 @@ Type 18 defines its an MCP Server (and will appear in that applications portal) 
 - Sets up the config store with
 
 ```objectscript
-do ##class(Setup.ConfigStoreSetup).SetupWithAPIKey(__APIKEY__)
+do ##class(Setup.ConfigStore).SetupWithAPIKey(__APIKEY__)
 ```
 The \__API__ key is being replaced at build time in the dockerfile. 
 
 - Sets up Roles for two users with 
 
 ```objectscript
-do ##class(Setup.RolesSetup).Run()
+do ##class(Setup.Roles).Run()
 ```
 
 ## FHIR Server Build 
-
-The FHIR Server build is done post container build because it takes a while (~5 mins)
 
 
 FHIR SQL Builder is not documented for programatic use, but InterSystems Dach SEs worked out how to can create the Builder Spec from POST requests and created a helper class to do this, which is compiled with IPM during the build.
@@ -82,7 +95,7 @@ docker exec -it iris iris session iris
 ```
 ```objectscript
 ZN "READYAI"
-Do ##class(Setup.FSBSetup).RunAll()
+Do ##class(Setup.FSB).RunAll()
 ```
 
 The SetupRequestBodies folder contains the FHIR-SQL Specification bodies, which are copied to /tmp/SetupRequestBodies as part of the customization build step.

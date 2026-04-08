@@ -1,4 +1,4 @@
-Class Setup.FSBSetup Extends %RegisteredObject
+Class Setup.FSB Extends %RegisteredObject
 {
 
 /// Description

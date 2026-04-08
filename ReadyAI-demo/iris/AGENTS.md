@@ -31,7 +31,7 @@ iris/
 
 ## FHIR SQL Builder Setup
 
-Automated via `ReadyAI.FSBSetup` ObjectScript class. Run once after first `docker-compose up`:
+Automated via `Setup.FSB` ObjectScript class. Run once after first `docker-compose up`:
 
 ```bash
 python3 scripts/fhir_setup.py
@@ -39,7 +39,7 @@ python3 scripts/fhir_setup.py
 
 Takes 5-10 minutes. Creates 119 patients × AFHIRData tables (Patient, Observation, Condition, DocumentReference).
 
-**What it does** (via `ReadyAI.FSBSetup.RunFHIR`):
+**What it does** (via `Setup.FSB.RunAll`):
 1. `InstallFHIRServer` — installs FHIR R4 server at `/readyai/r4`, loads 121 patient JSON bundles from `/tmp/fhirdata`
 2. `EnableApps` — enables `/csp/fhirsql/api/ui` and `/csp/fhirsql/api/repository` CSP apps with Password auth
 3. `GrantFSBRoles` — grants `FSB_Admin`, `FSB_Analyst`, `FSB_Data_Steward` to all test users
@@ -47,7 +47,7 @@ Takes 5-10 minutes. Creates 119 patients × AFHIRData tables (Patient, Observati
 
 **Why not in Dockerfile**: analysis takes 5-10 minutes — too slow for `docker build`.
 
-**Note**: `FSBSetup.cls` must be copied to `/tmp` before loading because the volume mount (`/home/irisowner/dev`) is owned by root but IRIS runs as `irisowner`.
+**Note**: `FSB.cls` must be copied to `/tmp` before loading because the volume mount (`/home/irisowner/dev`) is owned by root but IRIS runs as `irisowner`.
 
 ## Vector Store Setup
 

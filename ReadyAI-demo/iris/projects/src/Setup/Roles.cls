@@ -1,4 +1,4 @@
-Class Setup.RolesSetup Extends %RegisteredObject
+Class Setup.Roles Extends %RegisteredObject
 {
 
 ClassMethod Run() As %Status
@@ -48,12 +48,18 @@ ClassMethod Run() As %Status
     do ##class(Security.Users).Create("NJoy", .props)
     w "Nurse user NJoy created with partial access to patient records",!
 
-    kill props 
+
+    do ##class(Security.Roles).Create("TestRole", "Role with only class execution for testing", "", "",  )
+    do ##class(Security.Roles).Get("TestRole", .props)
+    set props("Resources")="%Native_ClassExecution:U"
+    set sc = ##class(Security.Roles).Modify("TestRole", .props)
+    do $SYSTEM.Status.DisplayError(sc)
+    kill props
 
     set props("Password")="1234"
-    set props("Resources")="%Native_ClassExecution:U"
+    
     do ##class(Security.Users).Create("Test", .props)
-    w "Test user created with no roles",!
+    w "Test user created with Class Execution Only",!
 }
 
 }

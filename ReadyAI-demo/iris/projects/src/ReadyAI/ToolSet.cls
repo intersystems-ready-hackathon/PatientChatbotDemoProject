@@ -1,30 +1,19 @@
-Class ReadyAI.ToolSet Extends %AI.ToolSet [ DependsOn=(ReadyAI.Tools.StandardTools,ReadyAI.Tools.FHIRSQLQueryTools) ]
+Class ReadyAI.FullAccessToolSet Extends %AI.ToolSet [ DependsOn = (ReadyAI.Tools.StandardTools, ReadyAI.Tools.FHIRSQLQueryTools) ]
 {
 
 XData Definition [ MimeType = application/xml ]
 {
-<ToolSet Name="ReadyAI.ToolSet">
+<ToolSet Name="ReadyAI.FullAccessToolSet">
             <Description>ToolSet for READYAI demo</Description>
             <Policies>
-                <Audit Class="ReadyAI.Audit.AuditTable" />
+                <Audit Class="ReadyAI.Policies.AuditTable" />
+                <Authorization Class="ReadyAI.Policies.RoleAuth" />
+                
             </Policies>
-            <Tool Name="EchoUser" Method="EchoUser" >
-                <Description>Echo the current user's username and roles back to them.</Description>
-            </Tool>
 
-            <Include Class="ReadyAI.Tools.StandardTools"/>
-            
-            <Include Class="ReadyAI.Tools.FHIRSQLQueryTools">
-                <Requirement Name="Role" Value="Doctor"/>
-            </Include>
+            <Include Class="ReadyAI.Tools.FHIRSQLQueryTools"/>
+
 </ToolSet>
-}
-
-ClassMethod EchoUser() As %DynamicObject
-{
-        set username = $USERNAME
-        set roles = $ROLES
-        Return {"Username": (username), "Roles": (roles)}
 }
 
 }

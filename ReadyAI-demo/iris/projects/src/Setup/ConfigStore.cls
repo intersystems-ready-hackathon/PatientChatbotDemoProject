@@ -1,5 +1,10 @@
-Class Setup.ConfigStoreSetup Extends %RegisteredObject
+Class Setup.ConfigStore Extends %RegisteredObject
 {
+
+ClassMethod Setup() As %Status
+{
+    Quit ..SetupWithAPIKey("sk-test-key")
+}
 
 ClassMethod SetupWithAPIKey(pAPIKey As %String) As %Status
 {
@@ -23,11 +28,11 @@ ClassMethod SetupWithAPIKey(pAPIKey As %String) As %Status
 
     set $NAMESPACE = "READYAI"
 
-    Do ##class(%ConfigStore.Configuration).Delete("AI.LLM.gpt-5-nano")
+    Do ##class(%ConfigStore.Configuration).Delete("AI.LLM.readyai")
 
     set llmConfig = {"model_provider": "openai", "model": "gpt-5-nano", "api_key": "secret://ReadyAI-Secrets.OpenAI#api_key"}
 
-    set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "gpt-5-nano", llmConfig)
+    set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "readyai", llmConfig)
     if $$$ISERR(sc) {
         write "ERROR creating LLM config: ", $System.Status.GetErrorText(sc), !
         quit sc

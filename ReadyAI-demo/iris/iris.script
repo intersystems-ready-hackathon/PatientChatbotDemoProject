@@ -27,18 +27,24 @@ SYS
  zpm "enable -community"
 
  zn "READYAI"
+
+ // ---- Compile and run FHIR SQL Builder setup before ZPM load ----
+ do $system.OBJ.LoadDir("/home/irisowner/dev/src/Setup","ck")
+ do ##class(Setup.Roles).Run()
+ do ##class(Setup.FSB).RunAll()
+
  zpm "load /home/irisowner/dev/ -v"
 
  // ---- Ensure all routines are compiled and persisted ----
  do $system.OBJ.CompilePackage("ReadyAI","ck")
+ do $system.OBJ.CompilePackage("Setup","ck")
  do $system.OBJ.CompilePackage("Utils","ck")
  do $system.OBJ.CompilePackage("Examples","ck")
 
  set apikey = "__APIKEY__" 
  write "setting up configstore with OpenAI API Key:"_apikey
  // ---- Setup ConfigStore LLM config ----
- do ##class(Setup.ConfigStoreSetup).SetupWithAPIKey(apikey)
- do ##class(Setup.RolesSetup).Run()
+ do ##class(Setup.ConfigStore).SetupWithAPIKey(apikey)
 
  halt
 

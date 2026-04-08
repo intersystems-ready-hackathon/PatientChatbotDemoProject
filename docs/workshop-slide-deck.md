@@ -142,7 +142,7 @@ asyncio.run(main())
 ```
 OPENAI_API_KEY (your shell env)
         ↓  scripts/fhir_setup.py
-        ↓  ConfigStoreSetup.SetupWithAPIKey()
+    ↓  Setup.ConfigStore.SetupWithAPIKey()
 ┌─────────────────────────────────────────┐
 │ IRIS Wallet                             │
 │  "ReadyAI-Secrets.OpenAI"              │
@@ -152,7 +152,7 @@ OPENAI_API_KEY (your shell env)
 ┌─────────────────────────────────────────┐
 │ ConfigStore: AI.LLM.readyai             │
 │  model_provider: openai                 │
-│  model: gpt-4o-mini                     │
+    │  model: gpt-5-nano                      │
 │  api_key: secret://ReadyAI-Secrets...   │
 └─────────────────────────────────────────┘
 ```

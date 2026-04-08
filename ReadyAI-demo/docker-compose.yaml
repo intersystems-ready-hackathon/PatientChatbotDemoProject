@@ -7,7 +7,7 @@ services:
     ports:
     - 1973:1972
     - 8888:8888
-    - 32773:52773
+    - 32783:52773
     volumes:
     - ./iris/projects:/home/irisowner/dev
     restart: unless-stopped

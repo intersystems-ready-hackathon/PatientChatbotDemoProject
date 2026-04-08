@@ -21,7 +21,7 @@ Browser (Streamlit :8501)
     ↓  login → role check
 Langchain Agent (Python 3.11, LangGraph)
     ↓  init_chat_model("readyai", iris_conn)   ← langchain-intersystems
-IRIS ConfigStore  →  Wallet  →  OpenAI gpt-4o-mini
+IRIS ConfigStore  →  Wallet  →  OpenAI gpt-5-nano
     ↓  get_tools() via MultiServerMCPClient
 iris-mcp-server (:8888, HTTP streamable-http)
     ↓  dispatches to ReadyAI.ToolSet
@@ -92,11 +92,12 @@ Login: `DScully / XFiles` (Doctor) or `NJoy / pokemon` (Nurse)
 ```
 ReadyAI-demo/
 ├── iris/projects/
-│   ├── ObjectScript/ReadyAI/
+│   ├── src/ReadyAI/
 │   │   ├── ToolSet.cls          # RBAC — which tools, which roles
 │   │   ├── SQLTools.cls         # 4 MCP tools (ListTables, QueryTable, ...)
 │   │   ├── MCPService.cls       # Registers the HTTP endpoint
-│   │   └── ConfigStoreSetup.cls # Seeds AI.LLM.readyai in ConfigStore
+│   └── src/Setup/
+│       └── ConfigStore.cls      # Seeds AI.LLM.readyai in ConfigStore
 │   └── config.toml              # iris-mcp-server config (port, namespace)
 │
 ├── langchain_external/readyai_app/app/
@@ -145,12 +146,12 @@ The API key never touches `.env` or source code — it lives in the IRIS Wallet.
 
 **Store the key** (once, via `scripts/fhir_setup.py` or manually):
 ```objectscript
-do ##class(ReadyAI.ConfigStoreSetup).SetupWithAPIKey("sk-proj-...")
+do ##class(Setup.ConfigStore).SetupWithAPIKey("sk-proj-...")
 ```
 
 Internally this creates:
 - `%Wallet.KeyValue "ReadyAI-Secrets.OpenAI"` — encrypted key storage
-- `%ConfigStore.Configuration "AI.LLM.readyai"` → `{"model_provider":"openai","model":"gpt-4o-mini","api_key":"secret://ReadyAI-Secrets.OpenAI#api_key"}`
+- `%ConfigStore.Configuration "AI.LLM.readyai"` → `{"model_provider":"openai","model":"gpt-5-nano","api_key":"secret://ReadyAI-Secrets.OpenAI#api_key"}`
 
 **Resolve the key at runtime** (Python):
 ```python

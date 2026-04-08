@@ -1,4 +1,4 @@
-Class ReadyAI.Audit.ToolLog Extends %Persistent
+Class ReadyAI.Policies.ToolLog Extends %Persistent
 {
 
 Property ToolName As %String;
@@ -54,11 +54,11 @@ Storage Default
 <Value>Username</Value>
 </Value>
 </Data>
-<DataLocation>^ReadyAI.ToolLogD</DataLocation>
+<DataLocation>^ReadyAI.Policies.ToolLogD</DataLocation>
 <DefaultData>ToolLogDefaultData</DefaultData>
-<IdLocation>^ReadyAI.ToolLogD</IdLocation>
-<IndexLocation>^ReadyAI.ToolLogI</IndexLocation>
-<StreamLocation>^ReadyAI.ToolLogS</StreamLocation>
+<IdLocation>^ReadyAI.Policies.ToolLogD</IdLocation>
+<IndexLocation>^ReadyAI.Policies.ToolLogI</IndexLocation>
+<StreamLocation>^ReadyAI.Policies.ToolLogS</StreamLocation>
 <Type>%Storage.Persistent</Type>
 }
 
