@@ -9,45 +9,42 @@ SYS
  set r.SSLConfiguration = "ISC.FeatureTracker.SSL.Config"
  do r.Get("/packages/zpm/latest/installer")
  do $system.OBJ.LoadStream(r.HttpResponse.Data,"c")
- zpm "enable -community"
+
 
  // ---- Enable CallIn service ----
  do ##class(Security.Services).Get("%Service_CallIn",.prop)
  set prop("Enabled") = 1
  do ##class(Security.Services).Modify("%Service_CallIn",.prop)
 
- // ---- Create READYAI database and namespace ----
- set dbDir = "/usr/irissys/mgr/readyai/"
- do ##class(%Library.File).CreateDirectoryChain(dbDir)
- do ##class(SYS.Database).CreateDatabase(dbDir)
- set dbProps("Directory") = dbDir
- do ##class(Config.Databases).Create("READYAI",.dbProps)
- set nsProps("Globals") = "READYAI"
- set nsProps("Library") = "IRISLIB"
- set nsProps("Routines") = "READYAI"
- set nsProps("SysGlobals") = "IRISSYS"
- set nsProps("SysRoutines") = "IRISSYS"
- set nsProps("TempGlobals") = "IRISTEMP"
- do ##class(Config.Namespaces).Create("READYAI",.nsProps)
+ // ---- Create READYAI namespace Using HSLIB ----
+ zn "HSLIB"
+ set tSC=##class(HS.Util.Installer.Foundation).Install("READYAI",.pVars)
  write "READYAI namespace created",!
 
  // ---- Map IPM to READYAI and load IPM package ----
  // IPM (zpm load) registers /mcp/readyAI with PasswordAuth+Unauthenticated from module.xml
- zpm "enable -map -globally"
+ ZN "%SYS"
+ zpm "enable -community"
 
  zn "READYAI"
+
+ // ---- Compile and run FHIR SQL Builder setup before ZPM load ----
+ do $system.OBJ.LoadDir("/home/irisowner/dev/src/Setup","ck")
+ do ##class(Setup.Roles).Run()
+ do ##class(Setup.FSB).RunAll()
+
  zpm "load /home/irisowner/dev/ -v"
 
  // ---- Ensure all routines are compiled and persisted ----
  do $system.OBJ.CompilePackage("ReadyAI","ck")
+ do $system.OBJ.CompilePackage("Setup","ck")
  do $system.OBJ.CompilePackage("Utils","ck")
  do $system.OBJ.CompilePackage("Examples","ck")
 
+ set apikey = "__APIKEY__" 
+ write "setting up configstore with OpenAI API Key:"_apikey
  // ---- Setup ConfigStore LLM config ----
- do ##class(ReadyAI.ConfigStoreSetup).Setup()
- // NOTE: FHIR SQL Builder setup (ReadyAI.FSBSetup.RunFHIR) is NOT run here
- // because it takes 30-40 minutes. Run it manually after first docker-compose up:
- //   python3 scripts/fhir_setup.py
+ do ##class(Setup.ConfigStore).SetupWithAPIKey(apikey)
 
  halt
 

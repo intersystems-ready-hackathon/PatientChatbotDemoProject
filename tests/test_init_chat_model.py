@@ -86,7 +86,7 @@ class TestInitChatModelIntegration:
         from langchain_core.language_models.chat_models import BaseChatModel
 
         irispy = _iris.createIRIS(iris_conn_superuser)
-        irispy.classMethodValue("ReadyAI.ConfigStoreSetup", "Setup")
+        irispy.classMethodValue("Setup.ConfigStore", "Setup")
 
         model = init_chat_model("readyai", iris_conn_superuser)
         assert isinstance(model, BaseChatModel), f"Expected BaseChatModel, got {type(model)}"
@@ -102,7 +102,7 @@ class TestInitChatModelIntegration:
         from langchain_intersystems.chat_models import init_chat_model
 
         irispy = _iris.createIRIS(iris_conn_superuser)
-        irispy.classMethodValue("ReadyAI.ConfigStoreSetup", "Setup")
+        irispy.classMethodValue("Setup.ConfigStore", "Setup")
 
         model = init_chat_model("readyai", iris_conn_superuser)
         assert "openai" in type(model).__module__.lower() or "openai" in type(model).__name__.lower(), (

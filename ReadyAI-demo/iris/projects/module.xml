@@ -5,19 +5,17 @@
       <Name>ReadyAI</Name>
       <Version>1.0.1</Version>
       <Packaging>module</Packaging>
-      <SourcesRoot>ObjectScript</SourcesRoot>
-      <Resource Name="ReadyAI.PKG"/>
-      <Resource Name="Examples.PKG"/>
+      <SourcesRoot>src</SourcesRoot>
+      <Resource Name="Utils.PKG"/>
       <Resource Name="Setup.PKG"/>
-      <Resource Name="RAG.PKG"/>
+      <Resource Name="ReadyAI.PKG"/>
       <WebApplication
         Url="/mcp/readyAI"
         Recurse="1"
         DispatchClass="ReadyAI.MCPService"
-        MatchRoles=":%All"
-        AutheEnabled="64"
-       />
-
+        AutheEnabled="#{$$$AutheCache}"
+        Type="18" 
+       /> 
     </Module>
     
   </Document>
