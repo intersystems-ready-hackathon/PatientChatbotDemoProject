@@ -1,4 +1,5 @@
 import asyncio
+import json
 import streamlit as st
 
 from agent.get_patient_snapshot import PatientSnapshotAgent
@@ -23,29 +24,89 @@ USER = st.session_state.get("Username")
 ROLES = st.session_state.get("Roles", [])
 
 if not st.session_state.get("logged_in") or not USER:
-    st.error("Please log in before generating a patient snapshot.")
-    st.stop()
+    st.switch_page("pages/login_page.py")
 
 if "Doctor" not in ROLES and "Nurse" not in ROLES:
     st.error("You do not have access to the patient snapshot page.")
-    st.stop()
+    st.switch_page("pages/login_page.py")
 
 
-async def _stream_reply(prompt: str, placeholder) -> str:
+def _format_tool_status(status: str) -> tuple[str, str]:
+    if status in ("success", "completed"):
+        return "Completed", "complete"
+    if status == "error":
+        return "Errored", "error"
+    return "Running", "running"
+
+
+def _render_json_block(label: str, value: str) -> None:
+    if not value:
+        return
+
+    st.caption(label)
+    try:
+        st.json(json.loads(value), expanded=2)
+    except (TypeError, json.JSONDecodeError):
+        st.code(value, language="json")
+
+
+def _render_tool_activity(tool_placeholder, tool_events: dict) -> None:
+    with tool_placeholder.container():
+        st.markdown("#### Tool activity")
+        for tool_event in tool_events.values():
+            status_label, state = _format_tool_status(tool_event["status"])
+            expander_label = f'{tool_event["name"]} - {status_label}'
+            with st.expander(expander_label, expanded=state == "running"):
+                if state == "running":
+                    st.info("Tool call in progress")
+                elif state == "complete":
+                    st.success("Tool call completed")
+                else:
+                    st.error("Tool call failed")
+
+                _render_json_block("Arguments", tool_event["args"])
+                _render_json_block("Result", tool_event["content"])
+
+
+async def _stream_reply(prompt: str, tool_container, response_placeholder) -> str:
     chunks = []
+    tool_events = {}
     agent = PatientSnapshotAgent(st.session_state["Username"], st.session_state["Password"])
+    with tool_container.container():
+        tool_placeholder = st.empty()
+
     async for chunk in agent.stream_response(prompt):
+        if isinstance(chunk, dict):
+            if chunk.get("type") == "tool_call":
+                tool_id = chunk.get("id")
+                if tool_id:
+                    tool_events[tool_id] = {
+                        "name": chunk.get("name", "") or "Tool call",
+                        "status": "running",
+                        "args": chunk.get("args", "") or "",
+                        "content": "",
+                    }
+            elif chunk.get("type") == "tool_result":
+                tool_id = chunk.get("id")
+                if tool_id and tool_id in tool_events:
+                    tool_events[tool_id]["status"] = chunk.get("status", "completed")
+                    tool_events[tool_id]["content"] = chunk.get("content", "") or ""
+
+            if tool_events:
+                _render_tool_activity(tool_placeholder, tool_events)
+            continue
+
         chunk_text = str(chunk)
         chunks.append(chunk_text)
-        placeholder.markdown("".join(chunks) + "▌")
+        response_placeholder.markdown("".join(chunks) + "▌")
 
     final_text = "".join(chunks).strip()
     if final_text:
-        placeholder.markdown(final_text)
+        response_placeholder.markdown(final_text)
         return final_text
 
     fallback = "I could not generate a response from the snapshot agent."
-    placeholder.markdown(fallback)
+    response_placeholder.markdown(fallback)
     return fallback
 
 
@@ -55,44 +116,10 @@ st.session_state.setdefault(
 )
 st.session_state.setdefault(PATIENT_NAME_KEY, "Stewart Larson")
 
-st.markdown(
-    """
-    <style>
-    .chat-shell {
-        padding: 1.25rem 1.4rem;
-        border: 1px solid rgba(15, 23, 42, 0.08);
-        border-radius: 18px;
-        background: linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
-        box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
-        margin-bottom: 1rem;
-    }
-    .chat-shell h1 {
-        margin: 0;
-        font-size: 2rem;
-    }
-    .chat-shell p {
-        margin: 0.4rem 0 0;
-        color: #475569;
-    }
-    .suggested-prompts-label {
-        font-size: 0.82rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: #64748b;
-        margin: 0.35rem 0 0.6rem;
-    }
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 with st.sidebar:
     st.caption(f"Signed in as {USER}")
-    st.caption(f"Role: {', '.join(ROLES)}")
+    mainrole = "Doctor" if "Doctor" in ROLES else 'Nurse' if 'Nurse' in ROLES else "No roles"
+    st.caption(f"Role: {mainrole}")
     if st.button("New chat", use_container_width=True):
         st.session_state[CHAT_STATE_KEY] = [{"role": "assistant", "content": DEFAULT_GREETING}]
         st.rerun()
@@ -105,15 +132,11 @@ with st.sidebar:
         st.session_state.pop(PENDING_PROMPT_KEY, None)
         st.switch_page("pages/login_page.py")
 
-st.markdown(
-    f"""
-    <div class="chat-shell">
-        <h1>{USER}'s Snapshot Chat</h1>
-        <p>Use the snapshot agent for patient briefs, quick follow-up questions, and concise handoff support.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+with st.container(border=True):
+    st.markdown(f"## {USER}'s Snapshot Chat")
+    st.write(
+        "Use the snapshot agent for patient briefs, quick follow-up questions, and concise handoff support."
+    )
 
 patient_name = st.text_input(
     "Patient name",
@@ -129,7 +152,7 @@ suggested_prompts = [
     template.format(patient_name=patient_name.strip()) for template in SUGGESTED_PROMPT_TEMPLATES
 ]
 
-st.markdown('<div class="suggested-prompts-label">Suggested prompts</div>', unsafe_allow_html=True)
+st.caption("Suggested prompts")
 prompt_columns = st.columns(len(suggested_prompts))
 selected_prompt = None
 for column, suggested_prompt in zip(prompt_columns, suggested_prompts):
@@ -170,13 +193,14 @@ if prompt:
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
+        tool_container = st.container()
         response_placeholder = st.empty()
         try:
-            final_response = asyncio.run(_stream_reply(agent_prompt, response_placeholder))
+            final_response = asyncio.run(_stream_reply(agent_prompt, tool_container, response_placeholder))
         except RuntimeError:
             loop = asyncio.new_event_loop()
             try:
-                final_response = loop.run_until_complete(_stream_reply(agent_prompt, response_placeholder))
+                final_response = loop.run_until_complete(_stream_reply(agent_prompt, tool_container, response_placeholder))
             finally:
                 loop.close()
 

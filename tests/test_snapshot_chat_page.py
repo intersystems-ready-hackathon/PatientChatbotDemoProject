@@ -124,6 +124,38 @@ class TestSnapshotChatPage:
         assert history[2]["role"] == "assistant"
         assert history[2]["content"] == "Jane Doe is clinically stable."
 
+    def test_chat_page_shows_tool_activity(self):
+        from streamlit.testing.v1 import AppTest
+
+        async def _fake_stream(prompt):
+            yield {"type": "tool_call", "id": "call-1", "name": "EchoUser", "status": "running", "args": '{"patient":"Stewart Larson"}'}
+            yield {"type": "tool_result", "id": "call-1", "name": "EchoUser", "status": "success", "content": '{"Roles":"Doctor"}'}
+            yield "Tool summary here."
+
+        agent_instance = MagicMock()
+        agent_instance.stream_response = _fake_stream
+
+        mock_agent_module = MagicMock()
+        mock_agent_module.PatientSnapshotAgent = MagicMock(return_value=agent_instance)
+
+        with _patched_page_modules(mock_agent_module):
+            at = AppTest.from_file(_SNAPSHOT_PAGE_PY)
+            at.session_state["Username"] = "DScully"
+            at.session_state["Password"] = "XFiles"
+            at.session_state["Roles"] = ["Doctor"]
+            at.session_state["logged_in"] = True
+            at = at.run()
+            at.button[[button.label for button in at.button].index("What tools do you have?")].click().run()
+
+        markdown_output = " ".join(str(item.value) for item in at.markdown)
+        assert "Tool activity" in markdown_output
+        assert len(at.expander) == 1
+        assert at.expander[0].label == "EchoUser - Completed"
+        assert len(at.json) == 2
+        json_values = [item.value for item in at.json]
+        assert '{"patient": "Stewart Larson"}' in json_values
+        assert '{"Roles": "Doctor"}' in json_values
+
     def test_blank_patient_name_blocks_chat(self):
         from streamlit.testing.v1 import AppTest
 

@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import json
 import os
 from builtins import BaseExceptionGroup
 
@@ -130,19 +131,94 @@ class PatientSnapshotAgent:
         )
 
     async def stream_response(self, prompt: str):
-        
         agent = await self.get_snapshot_agent()
+        seen_tool_calls = {}
         try:
             async for chunk in agent.astream(
                 {"messages": [HumanMessage(content=prompt)]},
                 stream_mode="messages",
             ):
                 message, _ = chunk
-                if message.type not in ("ai", "AIMessageChunk"):
-                    continue
-                for block in message.content_blocks:
-                    if block["type"] == "text":
-                        yield block["text"]
+                if message.type in ("ai", "AIMessageChunk"):
+                    blocks = getattr(message, "content_blocks", []) or []
+                    for block in blocks:
+                        if block["type"] == "text":
+                            yield block["text"]
+                        elif block["type"] == "tool_call":
+                            tool_name = block.get("name")
+                            tool_id = block.get("id") or tool_name
+                            if not tool_name or not tool_id:
+                                continue
+
+                            tool_args = block.get("args", {})
+                            if not isinstance(tool_args, str):
+                                tool_args = json.dumps(tool_args, indent=2, sort_keys=True)
+
+                            seen_tool_calls[tool_id] = tool_name
+                            yield {
+                                "type": "tool_call",
+                                "id": tool_id,
+                                "name": tool_name,
+                                "status": "running",
+                                "args": tool_args,
+                            }
+
+                    tool_calls = getattr(message, "tool_calls", []) or []
+                    for tool_call in tool_calls:
+                        tool_name = tool_call.get("name")
+                        tool_id = tool_call.get("id") or tool_name
+                        if not tool_name or not tool_id or tool_id in seen_tool_calls:
+                            continue
+
+                        tool_args = tool_call.get("args", {})
+                        if not isinstance(tool_args, str):
+                            tool_args = json.dumps(tool_args, indent=2, sort_keys=True)
+
+                        seen_tool_calls[tool_id] = tool_name
+                        yield {
+                            "type": "tool_call",
+                            "id": tool_id,
+                            "name": tool_name,
+                            "status": "running",
+                            "args": tool_args,
+                        }
+
+                    tool_call_chunks = getattr(message, "tool_call_chunks", []) or []
+                    for tool_call_chunk in tool_call_chunks:
+                        tool_name = tool_call_chunk.get("name")
+                        tool_id = tool_call_chunk.get("id") or tool_name
+                        if not tool_name or not tool_id or tool_id in seen_tool_calls:
+                            continue
+
+                        tool_args = tool_call_chunk.get("args", {})
+                        if not isinstance(tool_args, str):
+                            tool_args = json.dumps(tool_args, indent=2, sort_keys=True)
+
+                        seen_tool_calls[tool_id] = tool_name
+                        yield {
+                            "type": "tool_call",
+                            "id": tool_id,
+                            "name": tool_name,
+                            "status": "running",
+                            "args": tool_args,
+                        }
+                elif message.type == "tool":
+                    tool_id = getattr(message, "tool_call_id", None)
+                    tool_name = getattr(message, "name", None) or seen_tool_calls.get(tool_id)
+                    if not tool_id or not tool_name:
+                        continue
+
+                    tool_content = getattr(message, "content", "")
+                    if isinstance(tool_content, list):
+                        tool_content = "\n".join(str(item) for item in tool_content)
+
+                    yield {
+                        "type": "tool_result",
+                        "id": tool_id,
+                        "name": tool_name,
+                        "status": getattr(message, "status", "completed") or "completed",
+                        "content": str(tool_content).strip(),
+                    }
         except Exception as e:
             yield f"\n\n Error during agent execution: {e}"
 
