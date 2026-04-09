@@ -16,6 +16,7 @@ st.session_state.setdefault("Password", "")
 st.session_state.setdefault("Roles", [])
 st.session_state.setdefault("logged_in", False)
 
+
 st.title("ReadyAI — Patient Encounter Briefing")
 
 if st.session_state["logged_in"] and (
@@ -36,12 +37,8 @@ if submitted:
         conn = iris.connect(IRIS_HOST, IRIS_PORT, IRIS_NAMESPACE, username, password)
         irispy = iris.createIRIS(conn)
         user_info = irispy.classMethodValue("Utils.EchoUser", "EchoUser")
-
-        raw_roles = user_info.get("Roles") if isinstance(user_info, dict) else ""
-        if isinstance(raw_roles, str):
-            roles = [role.strip() for role in raw_roles.split(",") if role.strip()]
-        else:
-            roles = [str(role).strip() for role in raw_roles if str(role).strip()]
+        raw_roles = user_info.get("Roles")
+        roles = [role.strip() for role in str(raw_roles).split(",") if role.strip()]
     except Exception as exc:
         st.session_state["Username"] = ""
         st.session_state["Password"] = ""
