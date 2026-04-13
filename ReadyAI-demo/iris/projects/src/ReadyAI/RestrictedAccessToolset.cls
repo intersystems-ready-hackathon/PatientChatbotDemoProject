@@ -1,14 +1,13 @@
-Class ReadyAI.FullAccessToolSet Extends %AI.ToolSet [ DependsOn = (ReadyAI.Tools.StandardTools, ReadyAI.Tools.FHIRSQLQueryTools) ]
+Class ReadyAI.RestrictedAccessToolSet Extends %AI.ToolSet [ DependsOn = (ReadyAI.Tools.StandardTools, ReadyAI.Tools.FHIRSQLQueryTools) ]
 {
 
 XData Definition [ MimeType = application/xml ]
 {
-<ToolSet Name="ReadyAI.FullAccessToolSet">
+<ToolSet Name="ReadyAI.RestrictedAccessToolSet">
             <Description>ToolSet for READYAI demo</Description>
             <Policies>
                 <Audit Class="ReadyAI.Policies.AuditTable" />
                 <Authorization Class="ReadyAI.Policies.RoleAuth" />
-                
             </Policies>
 
             <Include Class="ReadyAI.Tools.FHIRSQLQueryTools"/>
