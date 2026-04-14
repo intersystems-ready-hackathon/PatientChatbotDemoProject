@@ -68,7 +68,7 @@ ClassMethod RunAll() As %Status
     Do ..InstallFHIRRepo()
     Do ..LoadFHIRData()
     #; Do ..GrantFSBRoles()
-    Do ##class(Setup.FSBRestRequest).RunAll()
+    #; Do ##class(Setup.FSBRestRequest).RunAll()
     Quit $$$OK
 }
 

@@ -32,15 +32,15 @@ ready2026-hackathon/
 
 | Task | Location |
 |------|----------|
-| Add/modify MCP tools (ObjectScript) | `ReadyAI-demo/iris/projects/ObjectScript/ReadyAI/` |
-| Add MCP tool example | `ReadyAI-demo/iris/projects/ObjectScript/Examples/` |
-| RAG / vector search tools | `ReadyAI-demo/iris/projects/ObjectScript/RAG/` |
+| Add/modify MCP tools (ObjectScript) | `ReadyAI-demo/iris/projects/src/ReadyAI/Tools/` |
+| Edit ToolSet XData (RBAC) | `ReadyAI-demo/iris/projects/src/ReadyAI/StandardToolSet.cls`, `RestrictedAccessToolset.cls` |
 | MCP server config (port, transport) | `ReadyAI-demo/iris/projects/config.toml` |
-| ToolSet RBAC config | `ReadyAI.ToolSet` XData in `ToolSet.cls` |
+| MCPService (endpoint spec) | `ReadyAI-demo/iris/projects/src/ReadyAI/MCPService.cls` |
 | Streamlit app entry point | `ReadyAI-demo/langchain_external/readyai_app/app/main.py` |
 | Langchain agent (snapshot) | `ReadyAI-demo/langchain_external/readyai_app/app/agent/get_patient_snapshot.py` |
-| Role-based page routing | `DoctorPage.py`, `NursePage.py` in `app/pages/` |
-| FHIR SQL Builder setup | `ReadyAI-demo/iris/projects/FHIR/SetupRequestBodies/` + `fhirsqlSetupCommands.txt` |
+| Login page | `ReadyAI-demo/langchain_external/readyai_app/app/pages/login_page.py` |
+| Chat/snapshot page (both roles) | `ReadyAI-demo/langchain_external/readyai_app/app/pages/snapshot_page.py` |
+| FHIR SQL Builder setup | `ReadyAI-demo/iris/projects/FHIR/SetupRequestBodies/` (POST body files) |
 | IRIS build customization | `ReadyAI-demo/iris/iris.script`, `iris.cpf` |
 | Synthetic patient FHIR data | `ReadyAI-demo/iris/fhirsampledata/patients/` (121 JSON files) |
 | IRISVectorStore standalone demo | `demos/langchain-vectorstore/` |
@@ -82,18 +82,20 @@ pytest
 ```
 Streamlit (login → role check) → PatientSnapshotAgent
     → MultiServerMCPClient (HTTP, Basic auth)
-        → iris-mcp-server (port 8888) → IRIS (port 1972/1973, namespace READYAI)
-            → ReadyAI.MCPService → ReadyAI.ToolSet
-                → ReadyAI.SQLTools (Doctor-only, ReadOnly)
-                → Examples.EchoUser
-                → RAG.DocRefSearchTool
+        → iris-mcp-server (port 8888) → IRIS (port 1972, namespace READYAI)
+            → ReadyAI.MCPService → ReadyAI.RestrictedAccessToolSet + ReadyAI.StandardToolSet
+                → ReadyAI.Tools.FHIRSQLQueryTools (Doctor-only via RoleAuth)
+                    ListTables, QueryTable
+                → ReadyAI.StandardToolSet (all users)
+                    EchoUser, FindPatientsBySurname, QueryAllergies, QueryMedications
 ```
 
 ## RBAC Pattern
 
-- IRIS roles drive tool access: `Doctor` role → full SQLTools; `Nurse` → restricted
-- Role check: `Utils.GetRoles.GetRoles()` via `iris.createIRIS(conn).classMethodValue(...)`
-- Tool-level enforcement: `<Requirement Name="Role" Value="Doctor"/>` in `ToolSet.cls` XData
+- IRIS roles drive tool access: `Doctor` role → all tools; `Nurse` → StandardToolSet only
+- Role check at login: `Utils.EchoUser.EchoUser()` returns `{"Username": ..., "Roles": ...}`
+- Tool-level enforcement: `<Authorization Class="ReadyAI.Policies.RoleAuth"/>` in `RestrictedAccessToolset.cls`
+- `RoleAuth.%CanList` / `%CanExecute`: checks `$ROLES` for `Doctor` or `%All`
 - Unauthorized tool calls: agent continues, reports access denial in final response
 
 ## FHIR SQL Builder
@@ -116,8 +118,8 @@ Streamlit (login → role check) → PatientSnapshotAgent
 ## Known Gotchas
 
 - `iris-mcp-server` and `langchain-intersystems` are provided by separate ISC teams — mock if unavailable
-- FHIR SQL Builder setup POSTs fail during Docker build (web-gateway dependency) — run manually post-start
-- `get_patient_snapshot.py` hardcodes `localhost:1973` — needs env-var extraction
-- `NursePage.py` is empty — not yet implemented
-- `DoctorPage.py` missing `import asyncio` (will error at runtime)
-- `langchain_discovery.py` hardcodes `SuperUser:SYS` credentials in commented-out lines
+- FHIR SQL Builder setup: automated in `iris.script` but may fail if FSB web app isn't ready — run `Setup.FSB.RunAll()` manually if `AFHIRData` tables are missing
+- `iris-mcp-server` 2.0 uses a WebSocket backchannel for tool invocations; `mcp` 1.26 client has an incompatible handshake — tool *discovery* works, tool *execution* may time out (marked `xfail` in tests)
+- App pages are now `login_page.py` and `snapshot_page.py` — `DoctorPage.py` / `NursePage.py` no longer exist
+- ConfigStore config name is `gpt-5-nano` (stored as `AI.LLM.gpt-5-nano`) — pass `"gpt-5-nano"` to `init_chat_model`, not `"readyai"`
+- `langchain_discovery.py` uses lowercase `DScully:xfiles` credentials — this matches what `Setup.Roles` creates

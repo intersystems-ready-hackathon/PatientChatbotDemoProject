@@ -95,7 +95,8 @@ docker exec -it iris iris session iris
 ```
 ```objectscript
 ZN "READYAI"
-Do ##class(Setup.FSB).RunAll()
+Do ##class(Setup.FSBRestRequest).RunAll()
+zpm "load /home/irisowner/dev -v" 
 ```
 
 The SetupRequestBodies folder contains the FHIR-SQL Specification bodies, which are copied to /tmp/SetupRequestBodies as part of the customization build step.
