@@ -136,7 +136,7 @@ python mcp_stdio_client_test.py
 
 ## Streamlit Side
 
-There is a second container running (technically third because we have web-gateway as well) with Python. This is our "Client" container which is connecting to the mcp server as a remote client via HTTP. 
+There is a second container running  with Python. This is our "Client" container which is connecting to the mcp server as a remote client via HTTP. 
 
 The demo app can be found at http://localhost:8501 . 
 

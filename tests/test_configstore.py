@@ -8,8 +8,8 @@ pytestmark = requires_iris
 
 def _load_readyai_config(irispy, _iris):
     config_ref = _iris.IRISReference(None)
-    sc = irispy.classMethodValue("%ConfigStore.Configuration", "Get", "AI.LLM.readyai", config_ref)
-    assert sc == 1, "AI.LLM.readyai not found in ConfigStore"
+    sc = irispy.classMethodValue("%ConfigStore.Configuration", "Get", "AI.LLM.gpt-5-nano", config_ref)
+    assert sc == 1, "AI.LLM.gpt-5-nano not found in ConfigStore"
 
     details_ref = _iris.IRISReference(None)
     sc = config_ref.getValue().invoke("GetDetailsWithSecrets", details_ref)
@@ -50,7 +50,7 @@ def test_setup_config_has_required_keys(iris_conn_superuser):
 
     assert "model_provider" in config, "model_provider missing"
     assert "model" in config, "model missing"
-    assert "." not in "readyai", "config name must not contain '.'"
+    assert "." not in "gpt-5-nano", "config name must not contain '.'"
 
 
 def test_setup_with_api_key_stores_secret(iris_conn_superuser):

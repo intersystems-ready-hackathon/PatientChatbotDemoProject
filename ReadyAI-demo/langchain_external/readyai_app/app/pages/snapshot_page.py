@@ -10,10 +10,11 @@ CHAT_STATE_KEY = "snapshot_chat_messages"
 PENDING_PROMPT_KEY = "snapshot_pending_prompt"
 PATIENT_NAME_KEY = "snapshot_patient_name"
 SUGGESTED_PROMPT_TEMPLATES = [
-    "What tools do you have?",
+    
     "Give me a concise snapshot for {patient_name}.",
     "What are the most important recent labs for {patient_name}?",
     "Summarize active problems and likely next steps for {patient_name}.",
+    "What tools do you have?",
 ]
 DEFAULT_GREETING = (
     "Hello. Ask for a patient snapshot, recent clinical context, or a concise follow-up summary."
@@ -42,7 +43,6 @@ def _format_tool_status(status: str) -> tuple[str, str]:
 def _render_json_block(label: str, value: str) -> None:
     if not value:
         return
-
     st.caption(label)
     try:
         st.json(json.loads(value), expanded=2)
@@ -77,27 +77,21 @@ async def _stream_reply(prompt: str, tool_container, response_placeholder) -> st
 
     async for chunk in agent.stream_response(prompt):
         if isinstance(chunk, dict):
-            if chunk.get("type") == "tool_call":
-                tool_id = chunk.get("id")
-                if tool_id:
-                    tool_events[tool_id] = {
-                        "name": chunk.get("name", "") or "Tool call",
-                        "status": "running",
-                        "args": chunk.get("args", "") or "",
-                        "content": "",
-                    }
-            elif chunk.get("type") == "tool_result":
-                tool_id = chunk.get("id")
-                if tool_id and tool_id in tool_events:
-                    tool_events[tool_id]["status"] = chunk.get("status", "completed")
-                    tool_events[tool_id]["content"] = chunk.get("content", "") or ""
+            if chunk["type"] == "tool_call":
+                tool_events[chunk["id"]] = {
+                    "name": chunk["name"],
+                    "status": "running",
+                    "args": chunk["args"],
+                    "content": "",
+                }
+            elif chunk["type"] == "tool_result":
+                tool_events[chunk["id"]]["status"] = chunk["status"]
+                tool_events[chunk["id"]]["content"] = chunk["content"]
 
-            if tool_events:
-                _render_tool_activity(tool_placeholder, tool_events)
+            _render_tool_activity(tool_placeholder, tool_events)
             continue
 
-        chunk_text = str(chunk)
-        chunks.append(chunk_text)
+        chunks.append(chunk)
         response_placeholder.markdown("".join(chunks) + "▌")
 
     final_text = "".join(chunks).strip()

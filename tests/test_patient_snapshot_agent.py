@@ -176,6 +176,66 @@ class TestPatientSnapshotAgentUnit:
         assert chunks == ["Final answer."]
 
     @pytest.mark.asyncio
+    async def test_stream_response_lists_tools_without_invoking_snapshot_agent(self):
+        from agent.get_patient_snapshot import PatientSnapshotAgent
+
+        agent = PatientSnapshotAgent("DScully", "XFiles")
+        mock_tools = [
+            {
+                "name": "mcp_readyai_EchoUser",
+                "description": "Confirm the signed-in user and roles.",
+            },
+            {
+                "name": "mcp_readyai_QueryTable",
+                "description": "Query a clinical table for one patient.",
+            },
+        ]
+
+        with patch.object(agent, "get_tools", AsyncMock(return_value=mock_tools)), \
+             patch.object(agent, "get_snapshot_agent", AsyncMock()) as get_snapshot_agent:
+            chunks = [chunk async for chunk in agent.stream_response("What tools do you have?")]
+
+        assert len(chunks) == 1
+        assert "I can currently access these tools:" in chunks[0]
+        assert "- EchoUser: Confirm the signed-in user and roles." in chunks[0]
+        assert "- QueryTable: Query a clinical table for one patient." in chunks[0]
+        get_snapshot_agent.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_stream_response_uses_latest_clinician_message_for_tool_shortcut(self):
+        async def fake_astream(*args, **kwargs):
+            msg = MagicMock()
+            msg.type = "ai"
+            msg.content_blocks = [{"type": "text", "text": "Latest clinician request handled normally."}]
+            yield msg, {}
+
+        mock_agent = MagicMock()
+        mock_agent.astream = fake_astream
+
+        mock_mcp_client = MagicMock()
+        mock_mcp_client.get_tools = AsyncMock(return_value=[])
+
+        prompt = (
+            "Continue this clinician chat using the patient snapshot agent.\n\n"
+            "Conversation so far:\n"
+            "Clinician: What tools do you have?\n"
+            "Assistant: I can currently access these tools...\n"
+            "Clinician: Summarize Jane Doe"
+        )
+
+        with patch("agent.get_patient_snapshot.MultiServerMCPClient", return_value=mock_mcp_client), \
+             patch("agent.get_patient_snapshot.init_chat_model"), \
+             patch("agent.get_patient_snapshot.create_agent", return_value=mock_agent) as create_agent_mock, \
+             patch("agent.get_patient_snapshot.iris"):
+            from agent.get_patient_snapshot import PatientSnapshotAgent
+
+            agent = PatientSnapshotAgent("DScully", "XFiles")
+            chunks = [chunk async for chunk in agent.stream_response(prompt)]
+
+        assert chunks == ["Latest clinician request handled normally."]
+        create_agent_mock.assert_called_once()
+
+    @pytest.mark.asyncio
     async def test_tool_error_middleware_returns_error_tool_message(self):
         from agent.get_patient_snapshot import _handle_tool_call_error
 
@@ -218,7 +278,7 @@ class TestPatientSnapshotAgentUnit:
 class TestPatientSnapshotAgentE2E:
     @pytest.mark.asyncio
     @pytest.mark.xfail(
-        reason="Requires OPENAI_API_KEY and a live LLM — set env var to run",
+        reason="Requires the live MCP stack and running iris-mcp-server transport",
         strict=False,
     )
     async def test_stream_response_doctor_produces_output(self):
@@ -276,7 +336,7 @@ class TestPatientSnapshotAgentE2E:
             await agent.get_snapshot_agent()
 
         assert len(call_log) == 1, "init_chat_model should be called exactly once"
-        assert call_log[0]["config_name"] == "readyai", (
-            f"Expected LLM_CONFIG_NAME='readyai', got {call_log[0]['config_name']!r}"
+        assert call_log[0]["config_name"] == "gpt-5-nano", (
+            f"Expected LLM_CONFIG_NAME='gpt-5-nano', got {call_log[0]['config_name']!r}"
         )
         assert call_log[0]["conn"] is not None, "init_chat_model must receive an IRIS connection"

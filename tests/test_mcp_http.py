@@ -36,16 +36,17 @@ async def test_tool_discovery_doctor_sees_sqltool_and_echo():
     names = {t.name for t in tools}
     assert any("EchoUser" in n for n in names), f"EchoUser missing from {names}"
     assert any("ListTables" in n for n in names), f"ListTables missing from {names}"
-    assert any("QueryTable" in n for n in names)
-    assert any("GetPatientsByCondition" in n for n in names)
-    assert any("GetConditionsList" in n for n in names)
+    assert any("QueryTable" in n for n in names), f"QueryTable missing from {names}"
+    assert any("FindPatientsBySurname" in n for n in names), f"FindPatientsBySurname missing from {names}"
 
 
 @pytest.mark.asyncio
-async def test_tool_discovery_nurse_sees_echo():
+async def test_tool_discovery_nurse_sees_echo_and_standard_queries():
     tools = await _get_tools_for_user(*USERS["nurse"])
     names = {t.name for t in tools}
     assert any("EchoUser" in n for n in names), f"EchoUser missing from {names}"
+    assert any("FindPatientsBySurname" in n for n in names), f"FindPatientsBySurname missing from {names}"
+    assert not any("ListTables" in n for n in names), "Nurse must not see ListTables (Doctor-only)"
 
 
 _TOOL_INVOCATION_XFAIL = pytest.mark.xfail(
