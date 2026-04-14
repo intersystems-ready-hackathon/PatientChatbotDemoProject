@@ -18,72 +18,108 @@ By the end of this workshop, you'll have seen — and be able to reuse — the t
 
 ```
 Browser (Streamlit :8501)
-    ↓  login → role check
-Langchain Agent (Python 3.11, LangGraph)
-    ↓  init_chat_model("readyai", iris_conn)   ← langchain-intersystems
+    ↓  login → role check → snapshot_page.py
+Langchain Agent (Python 3.12, LangGraph)
+    ↓  init_chat_model("gpt-5-nano", iris_conn)   ← langchain-intersystems
 IRIS ConfigStore  →  Wallet  →  OpenAI gpt-5-nano
-    ↓  get_tools() via MultiServerMCPClient
+    ↓  get_tools() via MultiServerMCPClient  (Basic auth per-user)
 iris-mcp-server (:8888, HTTP streamable-http)
-    ↓  dispatches to ReadyAI.ToolSet
+    ↓  ReadyAI.MCPService
 IRIS READYAI namespace
-    ├── AFHIRData.Observation  (34k rows)
-    ├── AFHIRData.Condition    (1.5k rows)
-    ├── AFHIRData.Patient      (119 rows)
-    └── AFHIRData.DocumentReference
+    ├── ReadyAI.StandardToolSet      ← EchoUser + FHIR SQL queries (all users)
+    ├── ReadyAI.RestrictedAccessToolSet  ← ListTables, QueryTable (Doctor only)
+    └── AFHIRData SQL schema
+        ├── Patient      (121 rows)
+        ├── Observation
+        ├── Condition
+        └── DocumentReference
 ```
 
 ---
 
 ## Prerequisites
 
-- Docker Desktop running (ARM64 Mac)
-- `OPENAI_API_KEY` exported in your shell
-- The repo cloned: `git clone https://gitlab.iscinternal.com/tdyar/ready2026-hackathon.git`
+- Docker Desktop running
+- An `OPENAI_API_KEY`
+- The repo: `git clone https://gitlab.iscinternal.com/tdyar/ready2026-hackathon.git`
+- (First time only) An IRIS for Health AI Hub build kit — see [README.md](../README.md#building-ai-hub)
 
 ---
 
-## Quick Start (10 minutes)
+## Quick Start
 
-### 1. Build and start the stack
+### 1. Build base IRIS AI Hub image (first time only, ~5 min)
+
+Follow the instructions in [README.md](../README.md#building-ai-hub) to build `i4h-aihub` from the downloaded kit.
+
+### 2. Create `.env` and start the stack
 
 ```bash
 cd ReadyAI-demo
+echo 'OPENAI_API_KEY="sk-..."' > .env
 
-# Build IRIS for Health container (first time ~5 min)
-docker-compose build
-
-# Start IRIS + langchain app
-OPENAI_API_KEY=$OPENAI_API_KEY docker-compose up -d iris langchain
+docker-compose up -d --build
 ```
+
+This builds: IRIS for Health + webgateway + the Streamlit/Langchain container.
 
 Wait for IRIS to be healthy:
 ```bash
 docker-compose ps   # iris should show "healthy"
 ```
 
-### 2. Run one-time FHIR setup (~10 min)
+The IRIS build (`iris.script`) automatically:
+- Creates the `READYAI` namespace
+- Loads ObjectScript classes via IPM
+- Sets up FHIR server and loads 121 synthetic patients
+- Registers the MCP web application at `/mcp/readyAI`
+- Creates `DScully` (Doctor) and `NJoy` (Nurse) users
+- Seeds the ConfigStore with your OpenAI API key
+
+> **If the automated FHIR setup didn't run** (check `docker-compose logs iris` for errors), run it manually:
+> ```bash
+> docker exec -it iris iris session iris
+> ```
+> ```objectscript
+> ZN "READYAI"
+> Do ##class(Setup.FSB).RunAll()
+> ```
+> This takes 5-10 minutes.
+
+### 3. Start the MCP server transport
+
+The MCP *web application* is registered automatically, but the `iris-mcp-server` transport process must be started manually:
 
 ```bash
-# From repo root — run once per fresh container
-python3 scripts/fhir_setup.py
+docker-compose exec -it iris bash
+iris-mcp-server -c config.toml run
 ```
 
-This:
-- Installs a FHIR R4 server and loads 121 synthetic patients
-- Runs FHIR SQL Builder analysis → creates `AFHIRData` SQL tables
-- Stores your `OPENAI_API_KEY` in the IRIS Wallet (never touches disk)
+Leave this running in its terminal.
 
-### 3. Start the MCP server
+### 4. Verify the MCP server
 
+```
+http://localhost:32783/mcp/readyAI/v1/health
+http://localhost:32783/mcp/readyAI/v1/services
+```
+
+Or test tool discovery locally:
 ```bash
-docker-compose up -d mcp-server
+pip install langchain langchain-mcp-adapters
+python3 ReadyAI-demo/langchain_external/langchain_discovery.py
 ```
 
-### 4. Open the app
+### 5. Open the app
 
 http://localhost:8501
 
-Login: `DScully / XFiles` (Doctor) or `NJoy / pokemon` (Nurse)
+Login with either user to see the chat interface:
+
+| User | Password | Role |
+|---|---|---|
+| `DScully` | `xfiles` | Doctor |
+| `NJoy` | `pokemon` | Nurse |
 
 ---
 
@@ -93,72 +129,94 @@ Login: `DScully / XFiles` (Doctor) or `NJoy / pokemon` (Nurse)
 ReadyAI-demo/
 ├── iris/projects/
 │   ├── src/ReadyAI/
-│   │   ├── ToolSet.cls          # RBAC — which tools, which roles
-│   │   ├── SQLTools.cls         # 4 MCP tools (ListTables, QueryTable, ...)
-│   │   ├── MCPService.cls       # Registers the HTTP endpoint
-│   └── src/Setup/
-│       └── ConfigStore.cls      # Seeds AI.LLM.readyai in ConfigStore
-│   └── config.toml              # iris-mcp-server config (port, namespace)
+│   │   ├── MCPService.cls             # HTTP MCP endpoint — specifies toolsets
+│   │   ├── StandardToolSet.cls        # EchoUser + FHIR SQL queries (all roles)
+│   │   ├── RestrictedAccessToolset.cls # ListTables, QueryTable (Doctor only)
+│   │   ├── Tools/FHIRSQLQueryTools.cls # ListTables + QueryTable method bodies
+│   │   ├── Tools/StandardTools.cls    # SearchForPatient + allergy/medication methods
+│   │   └── Policies/RoleAuth.cls      # Doctor-only RBAC enforcement
+│   ├── src/Setup/
+│   │   ├── ConfigStore.cls            # Seeds AI.LLM.gpt-5-nano in ConfigStore
+│   │   ├── Roles.cls                  # Creates DScully / NJoy users + roles
+│   │   └── FSB.cls                    # FHIR server + SQL Builder setup
+│   └── config.toml                    # iris-mcp-server config (port 8888)
 │
 ├── langchain_external/readyai_app/app/
-│   ├── main.py                  # Login → role check → page routing
-│   ├── pages/DoctorPage.py      # Patient picker + agent call
-│   └── agent/get_patient_snapshot.py   # PatientSnapshotAgent
+│   ├── main.py                        # Navigation: login_page → snapshot_page
+│   ├── pages/login_page.py            # Login form → role check → redirect
+│   ├── pages/snapshot_page.py         # Chat UI — works for Doctor and Nurse
+│   └── agent/get_patient_snapshot.py  # PatientSnapshotAgent (LangGraph + MCP)
 │
-└── langchain_external/dist/
-    └── langchain_intersystems-0.0.1-py3-none-any.whl
+└── docker-compose.yaml                # iris + webgateway + langchain services
 ```
 
 ---
 
 ## Pattern 1: IRIS MCP Server (ObjectScript Tools)
 
-The MCP server exposes ObjectScript class methods as LLM-callable tools.
+The MCP server exposes ObjectScript class methods as LLM-callable tools via two ToolSets.
 
-**Define a tool** (`SQLTools.cls`):
+**`MCPService.cls`** declares which ToolSets to serve:
 ```objectscript
-Class ReadyAI.SQLTools Extends %AI.Tool
+Class ReadyAI.MCPService Extends %AI.MCP.Service
 {
-  Method QueryTable(
-    tableName As %String,
-    patientIds As %DynamicArray) As %DynamicObject
-  {
-    // SQL query → %DynamicObject response
-  }
+  Parameter SPECIFICATION = "ReadyAI.RestrictedAccessToolSet,ReadyAI.StandardToolSet";
 }
 ```
 
-**Register it with RBAC** (`ToolSet.cls` XData):
+**`StandardToolSet.cls`** — available to all users, uses inline SQL queries in XData:
 ```xml
-<Include Class="ReadyAI.SQLTools">
-    <Requirement Name="Role" Value="Doctor"/>
-    <Requirement Name="ReadOnly" Value="1"/>
-</Include>
+<ToolSet Name="ReadyAI.StandardToolSet">
+    <Policies>
+        <Audit Class="ReadyAI.Policies.AuditTable"/>
+    </Policies>
+    <Tool Name="EchoUser" Method="EchoUser"/>
+    <Query Name="FindPatientsBySurname" Type="SQL" ...>
+        SELECT ID, GivenName, FamilyName, BirthDate
+        FROM AFHIRData.Patient WHERE FamilyName = :patientSurname
+    </Query>
+    ...
+</ToolSet>
 ```
 
-**Discovery**: the MCP server auto-discovers tools from the ToolSet at first client connection.
+**`RestrictedAccessToolSet.cls`** — Doctor role required (enforced by `RoleAuth.cls`):
+```xml
+<ToolSet Name="ReadyAI.RestrictedAccessToolSet">
+    <Policies>
+        <Audit Class="ReadyAI.Policies.AuditTable"/>
+        <Authorization Class="ReadyAI.Policies.RoleAuth"/>
+    </Policies>
+    <Include Class="ReadyAI.Tools.FHIRSQLQueryTools"/>
+</ToolSet>
+```
+
+**Methods in `FHIRSQLQueryTools.cls`** (Extends `%AI.Tool`):
+```objectscript
+Method ListTables() As %DynamicObject {...}
+Method QueryTable(tableName As %String, patientId As %Integer) As %DynamicObject {...}
+```
 
 ---
 
 ## Pattern 2: ConfigStore + Wallet (Secure LLM Credentials)
 
-The API key never touches `.env` or source code — it lives in the IRIS Wallet.
+The API key never touches a file — it lives in the IRIS Wallet.
 
-**Store the key** (once, via `scripts/fhir_setup.py` or manually):
+**Store the key** (done automatically at build time, or run manually):
 ```objectscript
 do ##class(Setup.ConfigStore).SetupWithAPIKey("sk-proj-...")
 ```
 
 Internally this creates:
 - `%Wallet.KeyValue "ReadyAI-Secrets.OpenAI"` — encrypted key storage
-- `%ConfigStore.Configuration "AI.LLM.readyai"` → `{"model_provider":"openai","model":"gpt-5-nano","api_key":"secret://ReadyAI-Secrets.OpenAI#api_key"}`
+- `%ConfigStore.Configuration "AI.LLM.gpt-5-nano"` → `{"model_provider":"openai","model":"gpt-5-nano","api_key":"secret://ReadyAI-Secrets.OpenAI#api_key"}`
 
 **Resolve the key at runtime** (Python):
 ```python
 from langchain_intersystems.chat_models import init_chat_model
 
 conn = iris.connect(host, port, namespace, username, password)
-model = init_chat_model("readyai", conn)   # reads ConfigStore, resolves Wallet
+model = init_chat_model("gpt-5-nano", conn)   # reads ConfigStore, resolves Wallet
 conn.close()
 # model is now a fully configured langchain BaseChatModel
 ```
@@ -167,17 +225,19 @@ conn.close()
 
 ## Pattern 3: langchain-intersystems Agent
 
+From `agent/get_patient_snapshot.py`:
+
 ```python
 from langchain_intersystems.chat_models import init_chat_model
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain.agents import create_agent
 
 # 1. Get LLM from ConfigStore
-conn = iris.connect(...)
-model = init_chat_model("readyai", conn)
+conn = iris.connect(os.environ["IRIS_HOST"], 1972, "READYAI", username, password)
+model = init_chat_model("gpt-5-nano", conn)
 conn.close()
 
-# 2. Get MCP tools (per-user credentials → RBAC enforced)
+# 2. Get MCP tools — per-user Basic auth → RBAC enforced server-side
 auth = base64.b64encode(f"{username}:{password}".encode()).decode()
 client = MultiServerMCPClient({
     "readyai": {
@@ -189,15 +249,15 @@ client = MultiServerMCPClient({
 tools = await client.get_tools()
 
 # 3. Create agent
-agent = create_agent(model=model, tools=tools, system_prompt="...")
+agent = create_agent(model=model, tools=tools, system_prompt=SYSTEM_PROMPT)
 
-# 4. Stream response
+# 4. Stream response (text + tool activity events)
 async for chunk in agent.astream(
     {"messages": [HumanMessage(content=prompt)]},
     stream_mode="messages",
 ):
     message, _ = chunk
-    if message.type == "AIMessageChunk":
+    if message.type in ("ai", "AIMessageChunk"):
         for block in message.content_blocks:
             if block["type"] == "text":
                 yield block["text"]
@@ -207,22 +267,39 @@ async for chunk in agent.astream(
 
 ## RBAC in Action
 
-Users authenticate against IRIS. Their role determines which MCP tools they see:
+Users authenticate against IRIS. Their role is checked server-side — tools not accessible to the user's role are hidden from `get_tools()`.
 
 | User | Password | Role | Tools visible |
 |---|---|---|---|
-| `DScully` | `XFiles` | Doctor | All 5 tools (ListTables, QueryTable, GetConditionsList, GetPatientsByCondition, EchoUser) |
-| `NJoy` | `pokemon` | Nurse | EchoUser only (SQLTools require Doctor role) |
+| `DScully` | `xfiles` | Doctor | All tools: `EchoUser`, `FindPatientsBySurname`, `QueryAllergies`, `QueryMedications` (StandardToolSet) + `ListTables`, `QueryTable` (RestrictedAccessToolSet) |
+| `NJoy` | `pokemon` | Nurse | StandardToolSet only: `EchoUser`, `FindPatientsBySurname`, `QueryAllergies`, `QueryMedications` |
 
-The RBAC check happens inside `iris-mcp-server` — tools not accessible to the user's role are hidden from `get_tools()`.
+Both users see the same `snapshot_page.py` — the agent automatically gets only the tools their role permits.
 
 ---
 
 ## Adding Your Own Tool
 
-1. Create `ReadyAI.MyTool.cls` extending `%AI.Tool`:
+**Option A — Add an inline SQL query to `StandardToolSet.cls`** (no ObjectScript method needed):
+
+```xml
+<Query
+    Name="GetRecentEncounters"
+    Type="SQL"
+    Description="Get recent encounters for a patient"
+    Arguments="patientId As %Integer"
+    MaxRows="20">
+  SELECT TOP 20 Status, Class, Period FROM AFHIRData.Encounter
+  WHERE Patient = CONCAT('Patient/', :patientId)
+  ORDER BY Period DESC
+</Query>
+```
+
+**Option B — Add a method to a `%AI.Tool` class** and include it in a ToolSet:
+
+1. Create `ReadyAI/Tools/MyTool.cls`:
 ```objectscript
-Class ReadyAI.MyTool Extends %AI.Tool
+Class ReadyAI.Tools.MyTool Extends %AI.Tool
 {
   Method MyMethod(param As %String) As %DynamicObject
   {
@@ -231,12 +308,12 @@ Class ReadyAI.MyTool Extends %AI.Tool
 }
 ```
 
-2. Register in `ToolSet.cls` XData:
+2. Include in `StandardToolSet.cls` XData (or create a new ToolSet):
 ```xml
-<Include Class="ReadyAI.MyTool"/>
+<Include Class="ReadyAI.Tools.MyTool"/>
 ```
 
-3. Compile and restart `mcp-server` — it auto-discovers.
+3. After editing, the class is auto-compiled (volume-mounted). Restart the `iris-mcp-server` process to pick up the new tool.
 
 ---
 
@@ -244,23 +321,23 @@ Class ReadyAI.MyTool Extends %AI.Tool
 
 | Symptom | Fix |
 |---|---|
-| Login fails: "Unable to allocate a license" | Restart IRIS: `docker-compose restart iris` |
-| "Table not found in schema AFHIRData" | Run `python3 scripts/fhir_setup.py` |
-| MCP server shows only `iris_status` tool | `docker-compose restart mcp-server` (waits for IRIS to be healthy) |
-| Agent error: "Error initialising agent" | Check `OPENAI_API_KEY` is set and Wallet seeded |
-| "Corrupt UTF-8 in IRIS response" | Likely large query result — add `TOP N` to SQL in SQLTools.cls |
+| Login shows "Login failed" | Check IRIS is healthy: `docker-compose ps`; restart if needed |
+| `docker-compose build` succeeds but no AFHIRData tables | Run FSB manually — see Step 2 above |
+| MCP tool discovery returns no tools | Ensure `iris-mcp-server -c config.toml run` is active in the container |
+| "Failed to retrieve tools from MCP" in app | MCP transport not started — see Step 3 |
+| Agent error: "RuntimeError: Failed to initialise chat model" | ConfigStore not seeded — rerun `Setup.ConfigStore.SetupWithAPIKey()` |
+| Tool invocations hang or return WebSocket errors | Known issue with `iris-mcp-server` 2.0 + `mcp` 1.26 WebSocket backchannel; tool discovery works, tool execution may fail |
+| App shows blank page after login | Check `docker-compose logs langchain` |
 
 ---
 
 ## What to Hack
 
-For the hackathon, you can extend this demo in any direction:
-
-- **New FHIR tools**: Add `GetEncounterHistory`, `GetMedications`, `GetDocumentNotes` to `SQLTools.cls`
-- **Vector search**: Use `RAG.DocRefSearchTool` — the vector store for `DocumentReference` text is pre-built
-- **Different dataset**: Swap FHIR data for any domain (financial, operational) — the MCP + ConfigStore patterns are domain-agnostic
-- **New LLM provider**: Change `model_provider` in ConfigStore — the code doesn't change
-- **Nurse tools**: Remove the `<Requirement Name="Role" Value="Doctor"/>` restriction to give Nurses access, or create Nurse-specific tools
+- **New FHIR tools**: Add inline `<Query>` entries to `StandardToolSet.cls` to expose `Encounter`, `MedicationRequest`, or `DocumentReference` data
+- **Vector search**: Uncomment `RAG.DocRefSearchTool` in a ToolSet — the `AFHIRData.DocRefVectorStore` global is pre-built
+- **Different LLM provider**: Change `model_provider` in `Setup.ConfigStore.SetupWithAPIKey()` — the Python agent code doesn't change
+- **Stricter Nurse tools**: Add a `NurseToolSet` with its own `Authorization` policy
+- **Audit log viewer**: Query `ReadyAI.ToolLog` — every tool call is logged via `ReadyAI.Policies.AuditTable`
 
 ---
 
@@ -268,14 +345,14 @@ For the hackathon, you can extend this demo in any direction:
 
 ```
 ready2026-hackathon/
-├── ReadyAI-demo/               # Everything for the demo
-│   ├── iris/                   # IRIS container (Dockerfile, scripts, ObjectScript, FHIR data)
-│   │   └── projects/           # Volume-mounted at /home/irisowner/dev
-│   ├── langchain_external/     # Python/Streamlit app
-│   │   ├── dist/               # langchain_intersystems whl
-│   │   └── readyai_app/app/    # Streamlit pages + agent
+├── ReadyAI-demo/
+│   ├── iris/                   # IRIS container (Dockerfile, iris.script, ObjectScript, FHIR data)
+│   │   └── projects/src/       # Volume-mounted ObjectScript classes
+│   ├── langchain_external/     # Python/Streamlit app (Docker container)
+│   │   └── readyai_app/app/    # main.py + pages/ + agent/
+│   ├── webgateway/             # Webgateway config (CSP.conf/ini)
 │   └── docker-compose.yaml
-├── tests/                      # 57 tests (unit + integration + E2E)
-├── scripts/fhir_setup.py       # One-time FHIR + Wallet setup
-└── demos/langchain-vectorstore/ # IRISVectorStore standalone demo
+├── tests/                      # Unit + integration + E2E tests
+├── scripts/fhir_setup.py       # Manual FHIR setup fallback (seeds Wallet + runs FSB)
+└── demos/langchain-vectorstore/ # Standalone IRISVectorStore demo
 ```
