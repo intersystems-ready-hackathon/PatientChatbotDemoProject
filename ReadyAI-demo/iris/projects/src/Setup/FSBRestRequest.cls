@@ -1,8 +1,18 @@
 Class Setup.FSBRestRequest Extends %RegisteredObject
 {
 
+/// Hostname for the web gateway service on the compose network
+Parameter SERVER = "webgateway";
+
 /// TCP port for Web Server
-Parameter PORT = 52773;
+Parameter PORT = 80;
+
+ClassMethod ConfigureRequest(httpRequest As %Net.HttpRequest)
+{
+    Set httpRequest.Server = ..#SERVER
+    Set httpRequest.Https = 0
+    Set httpRequest.Port = ..#PORT
+}
 
 ClassMethod LocalPOSTRequest(resource As %String, filePath As %String) As %Status
 {
@@ -10,9 +20,7 @@ ClassMethod LocalPOSTRequest(resource As %String, filePath As %String) As %Statu
     Set httpRequest = ##class(%Net.HttpRequest).%New()
 
     // Set the target URL
-    Set httpRequest.Server = "localhost"
-    Set httpRequest.Https = 0 
-    Set httpRequest.Port = ..#PORT
+    Do ..ConfigureRequest(httpRequest)
 
     // Set the request headers (optional)
     Do httpRequest.SetHeader("Content-Type", "application/json")
@@ -59,9 +67,7 @@ ClassMethod GetAnalysisStatus(id As %String) As %String
     Set httpRequest = ##class(%Net.HttpRequest).%New()
 
     // Set the target URL
-    Set httpRequest.Server = "localhost"
-    Set httpRequest.Https = 0 
-    Set httpRequest.Port = ..#PORT
+    Do ..ConfigureRequest(httpRequest)
 
     // Set the request headers (optional)
     Do httpRequest.SetHeader("Content-Type", "application/json")
