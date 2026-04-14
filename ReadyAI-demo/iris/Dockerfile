@@ -1,4 +1,4 @@
-FROM docker.iscinternal.com/docker-intersystems/intersystems/irishealth:2026.2.0AI.146.0
+FROM docker.iscinternal.com/intersystems/irishealth-community:2026.2.0AI.147.0
 
 USER irisowner
 
@@ -18,6 +18,8 @@ RUN sed -i "s|__APIKEY__|${OPENAI_API_KEY}|g" /home/irisowner/iris.script
 
 ENV IRISNAMESPACE "READYAI"
 WORKDIR /home/irisowner/dev
+
+RUN export PATH=/usr/irissys/bin:$PATH 
 
 RUN iris start IRIS \
     && iris session IRIS < /home/irisowner/iris.script\ 

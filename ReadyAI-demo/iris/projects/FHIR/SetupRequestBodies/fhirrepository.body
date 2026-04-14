@@ -1,7 +1,7 @@
 {
   "name": "READYAIRepo",
-  "hostname": "webgateway",
-  "port": "80",
+  "hostname": "localhost",
+  "port": "52773",
   "sslConfig": "",
   "credentialsId": "SuperUser",
   "repositoryURL": "/readyai/r4"

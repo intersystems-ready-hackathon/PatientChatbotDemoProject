@@ -2,10 +2,10 @@ Class Setup.FSBRestRequest Extends %RegisteredObject
 {
 
 /// Hostname for the web gateway service on the compose network
-Parameter SERVER = "webgateway";
+Parameter SERVER = "localhost";
 
 /// TCP port for Web Server
-Parameter PORT = 80;
+Parameter PORT = 52773;
 
 ClassMethod ConfigureRequest(httpRequest As %Net.HttpRequest)
 {
