@@ -8,7 +8,6 @@ ENV IRISPASSWORD "SYS"
 
 WORKDIR /home/irisowner/dev
 
-COPY keys/IRISHealth.key /usr/irissys/mgr/iris.key
 
 COPY ./iris.script /home/irisowner/iris.script
 COPY ./fhirsampledata/patients /tmp/fhirdata
