@@ -1,31 +1,31 @@
 Class ReadyAI.Policies.RoleAuth Extends %AI.Policy.Authorization
 {
-
-Method %CanList(tool As %String) As %Boolean
-{
+    Parameter STATEFUL=0;
+    ClassMethod CheckRoles(pRole As %String) As %Boolean
+    {
         set roles = $ROLES
-        if $FIND(roles, "Doctor") {
+        if $FIND(roles, pRole) {
             return 1
-        }elseif $FIND(roles, "%All") {
-            return 1
-        }
+        } 
         else {
             return 0
         }
-}
+    }
 
-Method %CanExecute(tool As %String) As %Status
-{
-        set roles = $ROLES
-        if $FIND(roles, "Doctor") {
+    Method %CanExecute(tool As %String, call As %DynamicObject, metadata As %DynamicObject) As %Status
+    {   
+        if ..CheckRoles("%All") {
             return $$$OK
         }
-        elseif $FIND(roles, "%All") {
-                return $$$OK
+
+        set requiredRole = metadata.%Get("Role") 
+        
+        if requiredRole'="" {
+            if '..CheckRoles(requiredRole) {
+                return $$$ERROR($$$AICoreToolAccessDenied, "User does not have the required role: " _ requiredRole)
             }
-        else {
-            return $$$ERROR($$$AICoreToolAccessDenied, "Access denied: User does not have the 'Doctor' role required to execute this tool.")
         }
+        return $$$OK
+    }
 }
 
-}

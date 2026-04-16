@@ -1,17 +1,19 @@
-Class ReadyAI.Tools.FHIRSQLQueryTools Extends %AI.Tool
+Class ReadyAI.Tools.AdvancedQueryTools Extends %AI.Tool
 {
 
-Parameter PackageName = "AFHIRData";
+Parameter PACKAGENAME = "AFHIRData";
 
-/// List the Availble tables in the FHIRData Schema
-Method ListTables() As %DynamicObject
+Parameter STATEFUL = 0;
+
+/// List the availble tables in the FHIRData Schema
+ClassMethod ListTables() As %DynamicObject
 {
         Set sc = $$$OK
 
         set l1 = "SELECT JSON_ARRAYAGG(JSON_OBJECT"
         set l2 = "('TABLE_SCHEMA':TABLE_SCHEMA, 'TABLE_NAME':TABLE_NAME)) "
         set l3 = "AS tables FROM INFORMATION_SCHEMA.TABLES "
-        set l4 = "WHERE TABLE_SCHEMA='"_..#PackageName_"'"
+        set l4 = "WHERE TABLE_SCHEMA='"_..#PACKAGENAME_"'"
         set query = l1_l2_l3_l4
         set statement = ##class(%SQL.Statement).%New()
         set status = statement.%Prepare(query)
@@ -31,7 +33,7 @@ Method ListTables() As %DynamicObject
 
 /// Query a FHIRdata Table for all entries for a given Patient.
 ///  PatientId should be a single integer identifier
-Method QueryTable(tableName As %String, patientId As %Integer) As %DynamicObject
+ClassMethod QueryTable(tableName As %String, patientId As %Integer) As %DynamicObject
 {
         set response = {}
         set rows = []
@@ -53,7 +55,7 @@ Method QueryTable(tableName As %String, patientId As %Integer) As %DynamicObject
             do response.%Set("Error", $System.Status.GetErrorText(status))
             quit response
         }
-        set metadataResult = metadataStatement.%Execute(..#PackageName, tableName)
+        set metadataResult = metadataStatement.%Execute(..#PACKAGENAME, tableName)
         set columnCount = 0
         set patientColumn = ""
 
@@ -71,27 +73,24 @@ Method QueryTable(tableName As %String, patientId As %Integer) As %DynamicObject
 
         if columnCount=0 {
             do response.%Set("Status", "ERROR")
-            do response.%Set("Error", "Table not found in schema "_..#PackageName)
-            set ^QueryTableLog($INCREMENT(^QueryTableLog)) = response.%ToJSON()
+            do response.%Set("Error", "Table not found in schema "_..#PACKAGENAME)
             quit response
         }
 
         if patientColumn="" {
             do response.%Set("Status", "ERROR")
             do response.%Set("Error", "No supported patient ID column found on table "_tableName)
-            set ^QueryTableLog($INCREMENT(^QueryTableLog)) = response.%ToJSON()
             quit response
         }
 
         do response.%Set("PatientColumn", patientColumn)
 
-        set query = "SELECT TOP 50 *  FROM "_..#PackageName_"."_tableName_" WHERE "_patientColumn_" = ?"
+        set query = "SELECT TOP 50 *  FROM "_..#PACKAGENAME_"."_tableName_" WHERE "_patientColumn_" = ?"
         set statement = ##class(%SQL.Statement).%New()
         set status = statement.%Prepare(query)
         if $$$ISERR(status) {
             do response.%Set("Status", "ERROR")
             do response.%Set("Error", $System.Status.GetErrorText(status))
-            set ^QueryTableLog($INCREMENT(^QueryTableLog)) = response.%ToJSON()
             quit response
         }
 
@@ -109,7 +108,6 @@ Method QueryTable(tableName As %String, patientId As %Integer) As %DynamicObject
             }
 
         do response.%Set("Status", "OK")
-        set ^QueryTableLog($INCREMENT(^QueryTableLog)) = response.%ToJSON()
         quit response
 }
 

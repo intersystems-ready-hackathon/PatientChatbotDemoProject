@@ -1,96 +1,25 @@
 Class ReadyAI.Tools.StandardTools Extends %AI.Tool
 {
+    
+Parameter STATEFUL = 0;
 
-/// Search for a patient based on their surname
-/// Use this to find the patient ID which can be used for other queries
-Method SearchForPatient(PatientSurname As %String) As %DynamicObject
+/// Lists patients by their surname
+Query ListPatientsBySurname(surname As %String) As %SQLQuery(ROWSPEC="ID:%Integer, GivenName:%String, FamilyName:%String, BirthDate:%Date") [SqlProc]
 {
-        set query = "SELECT ID, GivenName, FamilyName, BirthDate FROM AFHIRData.Patient WHERE FamilyName = ?"
-        set statement = ##class(%SQL.Statement).%New()
-        set status = statement.%Prepare(query)
-        if $$$ISERR(status) {
-            do $System.Status.DisplayError(status)
-            quit {"status":"Error preparing SQL statement", "Details": ($System.Status.GetErrorText(status))}
-        }
-        set resultSet = statement.%Execute(PatientSurname)
-        if $$$ISERR(status) {
-            do $System.Status.DisplayError(status)
-            quit {"status":"Error executing SQL statement", "Details": ($System.Status.GetErrorText(status))}
-        }
-        set results = []
-        while resultSet.%Next() {
-            set patientId = resultSet.%Get("ID")
-            set givenName = resultSet.%Get("GivenName")
-            set familyName = resultSet.%Get("FamilyName")
-            set birthDate = resultSet.%Get("BirthDate")
-            set patientInfo = {"ID": (patientId), "GivenName": (givenName), "FamilyName": (familyName), "BirthDate": (birthDate)}
-            do results.%Push(patientInfo)
-        }
-        quit results
+        SELECT TOP 50 ID, GivenName, FamilyName, BirthDate 
+        FROM AFHIRData.Patient WHERE FamilyName = :surname
+}
+/// Lists the current allergies for a patient based on their patient ID
+Query ListAllergies(patientId As %Integer) As %SQLQuery(ROWSPEC="AllergyDescription:%String, Category:%String, Code:%String, Criticality:%String, Status:%String, VerificationStatus:%String") [SqlProc]
+{
+        SELECT TOP 50 AllergyDescription, Category, Code, Criticality, Status, VerificationStatus
+        FROM AFHIRData.AllergyIntolerance WHERE Patient=CONCAT('Patient/', :patientId)
 }
 
-/// Search for allergy information for a patient based on their patient ID. 
-Method QueryPatientAllergies(PatientID As %Integer) As %DynamicObject
+/// Lists the current medications for a patient based on their patient ID
+Query ListMedications(patientId As %Integer) As %SQLQuery(ROWSPEC="Description:%String, Code:%String, AuthoredOn:%DateTime") [SqlProc]
 {
-
-        set patientReference = "Patient/"_PatientID
-        set l1 = "SELECT TOP 50 AllergyDescription, Category, Code, Criticality, "
-        set l2 = "Status, VerificationStatus FROM AFHIRData.AllergyIntolerance WHERE Patient=?"
-        set query = l1_l2
-        set statement = ##class(%SQL.Statement).%New()
-        set status = statement.%Prepare(query)
-        if $$$ISERR(status) {
-            do $System.Status.DisplayError(status)
-            quit {"status":"Error preparing SQL statement", "Details": ($System.Status.GetErrorText(status))}
-        }
-        set resultSet = statement.%Execute(patientReference)
-        if $$$ISERR(status) {
-            do $System.Status.DisplayError(status)
-            quit {"status":"Error executing SQL statement", "Details": ($System.Status.GetErrorText(status))}
-        }
-        set results = []
-        while resultSet.%Next() {
-            set allergyDescription = resultSet.%Get("AllergyDescription")
-            set category = resultSet.%Get("Category")
-            set code = ##class(Utils.SafeString).SafeString(resultSet.%Get("Code"))
-            set criticality = ##class(Utils.SafeString).SafeString(resultSet.%Get("Criticality"))
-            set statusVerificationStatus = ##class(Utils.SafeString).SafeString(resultSet.%Get("StatusVerificationStatus"))
-            set allergyInfo = {"AllergyDescription": (allergyDescription), "Category": (category), "Code": (code), "Criticality": (criticality), "StatusVerificationStatus": (statusVerificationStatus)}
-            do results.%Push(allergyInfo)
-        }
-        quit results
+        SELECT TOP 50 Description, Code, AuthoredOn
+        FROM AFHIRData.MedicationRequest WHERE Patient=CONCAT('Patient/', :patientId)
 }
-
-/// Search for medication information for a patient based on their patient ID.
-Method QueryMedications(PatientId As %Integer) As %DynamicObject
-{
-        set patientReference = "Patient/"_PatientId
-        set l1 = "SELECT TOP 50 Description, AuthoredOn "
-        set l2 = "FROM AFHIRData.MedicationRequest WHERE Patient=?"
-        set l3 = "ORDER BY AuthoredOn DESC" 
-        set query = l1_l2_l3
-        set statement = ##class(%SQL.Statement).%New()
-        set status = statement.%Prepare(query)
-        if $$$ISERR(status) {
-            do $System.Status.DisplayError(status)
-            quit {"status":"Error preparing SQL statement", "Details": ($System.Status.GetErrorText(status))}
-        }
-        set query = l1_l2_l3
-        set statement = ##class(%SQL.Statement).%New()
-        set status = statement.%Prepare(query)
-        if $$$ISERR(status) {
-            do $System.Status.DisplayError(status)
-            quit {"status":"Error executing SQL statement", "Details": ($System.Status.GetErrorText(status))}
-        }
-        set results = []
-        set resultSet = statement.%Execute(patientReference)
-        while resultSet.%Next() {
-            set medicationRequestAuthoredOn = resultSet.%Get("AuthoredOn")
-            set medicationDescription = ##class(Utils.SafeString).SafeString(resultSet.%Get("Description"))
-            set medicationInfo = {"MedicationRequestAuthoredOn": (medicationRequestAuthoredOn), "MedicationDescription": (medicationDescription)}
-            do results.%Push(medicationInfo)
-        }
-        quit results
-}
-
 }

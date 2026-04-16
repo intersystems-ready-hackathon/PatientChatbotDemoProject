@@ -7,8 +7,8 @@ from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 load_dotenv()
 
-# AUTH_HEADER = base64.b64encode(b"SuperUser:SYS").decode("utf-8")
-AUTH_HEADER = base64.b64encode(b"DScully:xfiles").decode("utf-8")
+AUTH_HEADER = base64.b64encode(b"SuperUser:SYS").decode("utf-8")
+# AUTH_HEADER = base64.b64encode(b"DScully:xfiles").decode("utf-8")
 # AUTH_HEADER = base64.b64encode(b"NJoy:pokemon").decode("utf-8")
 
 async def get_tools():
@@ -24,7 +24,7 @@ async def get_tools():
 
     tools = await client.get_tools()
     for tool in tools: 
-        print("- ", tool, "\n")
+        print("- ", tool.name)
     print("Available MCP tools:")
     
     for tool in sorted(tools, key=lambda item: item.name):
@@ -37,19 +37,18 @@ async def get_tools():
         elif tool.name == "mcp_readyai_ListTables":
             try:
                 out = await tool.ainvoke({})
-                print(out)
+                print(str(out)[:200])
             except Exception as e:
                 print(f"Error invoking {tool.name}: {e}")
         
         elif tool.name == "mcp_readyai_QueryTable":
             try:
                 out = await tool.ainvoke({"patientId": 3, "tableName": "Observation"})
-                print(out)  
+                print(str(out)[:200])  
             except Exception as e:
                 print(f"Error invoking {tool.name}: {e}")
 
-        #     print(out)
-        print(f"- {tool.name}")
+
 
     
     return tools 

@@ -19,3 +19,62 @@ ISCAgent[20]: Starting
 ISCAgent[24]: Starting ApplicationServer on *:2188
 
 14:42:24 2026-04-13 [INFO] Starting InterSystems IRIS instance IRIS...
+10:58:04 2026-04-14 [INFO] Shutting down InterSystems IRIS instance IRIS...
+10:58:11 2026-04-14 [INFO] ...shut down InterSystems IRIS instance IRIS
+10:58:25 2026-04-14 [INFO] Writing status to file: /home/irisowner/irissys/iscagent.status
+Reading configuration from file: /home/irisowner/irissys/iscagent.conf
+ISCAgent[20]: Starting
+ISCAgent[27]: Starting ApplicationServer on *:2188
+
+10:58:25 2026-04-14 [INFO] Starting InterSystems IRIS instance IRIS...
+11:52:31 2026-04-14 [INFO] Starting Control Process
+Global buffer setting requires attention.  Auto-selected 25% of total memory.
+Allocated 5017MB shared memory
+3930MB global buffers, 393MB routine buffers
+This copy of InterSystems IRIS has been licensed for use exclusively by:
+InterSystems IRIS Community
+Copyright (c) 1986-2026 by InterSystems Corporation
+Any other use is a violation of your license agreement
+
+11:52:44 2026-04-14 [INFO] Writing status to file: /home/irisowner/irissys/iscagent.status
+Reading configuration from file: /home/irisowner/irissys/iscagent.conf
+ISCAgent[20]: Starting
+ISCAgent[21]: Starting ApplicationServer on *:2188
+
+11:52:44 2026-04-14 [INFO] Starting InterSystems IRIS instance IRIS...
+11:54:20 2026-04-14 [INFO] Starting Control Process
+Global buffer setting requires attention.  Auto-selected 25% of total memory.
+Allocated 5017MB shared memory
+3930MB global buffers, 393MB routine buffers
+This copy of InterSystems IRIS has been licensed for use exclusively by:
+InterSystems IRIS Community
+Copyright (c) 1986-2026 by InterSystems Corporation
+Any other use is a violation of your license agreement
+
+2 alert(s) during startup. See messages.log for details.
+Starting IRIS
+
+
+11:54:20 2026-04-14 [INFO] ...started InterSystems IRIS instance IRIS
+08:40:55 2026-04-16 [INFO] Shutting down InterSystems IRIS instance IRIS...
+08:41:02 2026-04-16 [INFO] ...shut down InterSystems IRIS instance IRIS
+12:54:43 2026-04-16 [INFO] Writing status to file: /home/irisowner/irissys/iscagent.status
+Reading configuration from file: /home/irisowner/irissys/iscagent.conf
+ISCAgent[22]: Starting
+ISCAgent[23]: Starting ApplicationServer on *:2188
+
+12:54:43 2026-04-16 [INFO] Starting InterSystems IRIS instance IRIS...
+12:54:46 2026-04-16 [INFO] Starting Control Process
+Global buffer setting requires attention.  Auto-selected 25% of total memory.
+Allocated 5017MB shared memory
+3930MB global buffers, 393MB routine buffers
+This copy of InterSystems IRIS has been licensed for use exclusively by:
+InterSystems IRIS Community
+Copyright (c) 1986-2026 by InterSystems Corporation
+Any other use is a violation of your license agreement
+
+1 alert(s) during startup. See messages.log for details.
+Starting IRIS
+
+
+12:54:46 2026-04-16 [INFO] ...started InterSystems IRIS instance IRIS
