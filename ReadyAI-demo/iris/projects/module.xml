@@ -10,9 +10,17 @@
       <Resource Name="Setup.PKG"/>
       <Resource Name="ReadyAI.PKG"/>
       <WebApplication
-        Url="/mcp/readyAI"
+        Url="/mcp/readyai/advanced"
         Recurse="1"
-        DispatchClass="ReadyAI.MCPService"
+        Resource="MedicalAccess"
+        DispatchClass="ReadyAI.AdvancedMCP"
+        AutheEnabled="#{$$$AutheCache}"
+        Type="18" 
+       /> 
+      <WebApplication
+        Url="/mcp/readyai/basic"
+        Recurse="1"
+        DispatchClass="ReadyAI.BasicMCP"
         AutheEnabled="#{$$$AutheCache}"
         Type="18" 
        /> 

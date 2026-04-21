@@ -1,1 +1,0 @@
-- 2026-03-31: No unresolved blockers from the simplifier pass. Existing xfail/xpass behavior in MCP/LLM integration tests was preserved.

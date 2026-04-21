@@ -1,50 +1,72 @@
 import asyncio
 import os
 import base64
-from langchain_mcp_adapters.client import MultiServerMCPClient
+
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 load_dotenv()
 
-AUTH_HEADER = base64.b64encode(b"SuperUser:SYS").decode("utf-8")
-# AUTH_HEADER = base64.b64encode(b"DScully:xfiles").decode("utf-8")
-# AUTH_HEADER = base64.b64encode(b"NJoy:pokemon").decode("utf-8")
+# auth = "NJoy:pokemon"
+# 
+
+auth = "DScully:xfiles"
+AUTH_HEADER = base64.b64encode(auth.encode("utf-8")).decode("utf-8")
+
+
+TOOL_PROBES = {
+    "mcp_readyai_advanced_ListTables": {},
+    "mcp_readyai_advanced_QueryTable": {"patientId": 3, "tableName": "Observation"},
+    "mcp_readyai_basic_ListPatientsBySurname": {"surname": "Larson"},
+    "mcp_readyai_basic_ListMedications": {"patientId": 3},
+}
+
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+# auth = "SuperUser:SYS"
+AUTH_HEADER = base64.b64encode(auth.encode("utf-8")).decode("utf-8")
 
 async def get_tools():
     client = MultiServerMCPClient(
         {
-            "minimal": {
-                "transport": "http",
-                "url": "http://localhost:8888/mcp/readyai",
-                "headers": {"Authorization": f"Basic {AUTH_HEADER}"},
-            }
+        "readyai": {
+            "transport": "http",
+            "url": "http://localhost:8888/mcp/readyai/",
+            "headers": {"Authorization": f"Basic {AUTH_HEADER}"},
+        }
         }
     )
-
     tools = await client.get_tools()
+
+    print("logged in with " + auth)
+    print("using MCP proxy " + "http://localhost:8888/mcp/readyai/")
+    print("Available MCP tools:")
     for tool in tools: 
         print("- ", tool.name)
-    print("Available MCP tools:")
     
     for tool in sorted(tools, key=lambda item: item.name):
-        if tool.name == "mcp_readyai_EchoUser":
+        if tool.name == "mcp_readyai_advanced_ListTables":
             try:
-                out = await tool.ainvoke({})
-                print(out)
-            except Exception as e:
-                print(f"Error invoking {tool.name}: {e}")
-        elif tool.name == "mcp_readyai_ListTables":
-            try:
-                out = await tool.ainvoke({})
+                out = await tool.ainvoke(TOOL_PROBES[tool.name])
                 print(str(out)[:200])
             except Exception as e:
                 print(f"Error invoking {tool.name}: {e}")
-        
-        elif tool.name == "mcp_readyai_QueryTable":
+        elif tool.name == "mcp_readyai_advanced_QueryTable":
             try:
-                out = await tool.ainvoke({"patientId": 3, "tableName": "Observation"})
+                out = await tool.ainvoke(TOOL_PROBES[tool.name])
                 print(str(out)[:200])  
+            except Exception as e:
+                print(f"Error invoking {tool.name}: {e}")
+        elif tool.name == "mcp_readyai_basic_ListPatientsBySurname":
+            try:
+                out = await tool.ainvoke(TOOL_PROBES[tool.name])
+                print(str(out)[:200])
+            except Exception as e:
+                print(f"Error invoking {tool.name}: {e}")
+        elif tool.name == "mcp_readyai_basic_ListMedications":
+            try:
+                out = await tool.ainvoke(TOOL_PROBES[tool.name])
+                print(str(out)[:200])
             except Exception as e:
                 print(f"Error invoking {tool.name}: {e}")
 
