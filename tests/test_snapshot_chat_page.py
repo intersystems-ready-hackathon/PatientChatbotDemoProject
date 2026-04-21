@@ -59,6 +59,7 @@ class TestSnapshotChatPage:
         assert "Log out" in button_labels
         assert "What tools do you have?" in button_labels
         assert "Give me a concise snapshot for Stewart Larson." in button_labels
+        assert len(at.chat_input) == 1
         markdown_output = " ".join(str(item.value) for item in at.markdown)
         assert "Snapshot Chat" in markdown_output
         assert "Ask for a patient snapshot" in markdown_output
@@ -86,7 +87,7 @@ class TestSnapshotChatPage:
             at = at.run()
 
             prompt_index = [button.label for button in at.button].index("Give me a concise snapshot for Stewart Larson.")
-            at.button[prompt_index].click().run()
+            at = at.button[prompt_index].click().run()
 
         history = at.session_state["snapshot_chat_messages"]
         assert history[1]["role"] == "user"
@@ -116,13 +117,125 @@ class TestSnapshotChatPage:
             at.session_state["Roles"] = ["Doctor"]
             at.session_state["logged_in"] = True
             at = at.run()
-            at.chat_input[0].set_value("Summarize Jane Doe").run()
+            at = at.chat_input[0].set_value("Summarize Jane Doe").run()
 
         history = at.session_state["snapshot_chat_messages"]
         assert history[1]["role"] == "user"
         assert history[1]["content"] == "Summarize Jane Doe"
         assert history[2]["role"] == "assistant"
         assert history[2]["content"] == "Jane Doe is clinically stable."
+
+    def test_chat_page_allows_follow_up_prompts(self):
+        from streamlit.testing.v1 import AppTest
+
+        async def _fake_stream(prompt):
+            if "Second follow up" in prompt:
+                yield "second response"
+                return
+
+            assert "First follow up" in prompt
+            yield "first response"
+
+        agent_instance = MagicMock()
+        agent_instance.stream_response = _fake_stream
+
+        mock_agent_module = MagicMock()
+        mock_agent_module.PatientSnapshotAgent = MagicMock(return_value=agent_instance)
+
+        with _patched_page_modules(mock_agent_module):
+            at = AppTest.from_file(_SNAPSHOT_PAGE_PY)
+            at.session_state["Username"] = "DScully"
+            at.session_state["Password"] = "XFiles"
+            at.session_state["Roles"] = ["Doctor"]
+            at.session_state["logged_in"] = True
+            at = at.run()
+
+            at = at.chat_input[0].set_value("First follow up").run()
+
+            at = at.chat_input[0].set_value("Second follow up").run()
+
+        assert not at.exception
+        assert len(at.chat_input) == 1
+
+        history = at.session_state["snapshot_chat_messages"]
+        assert history[1]["content"] == "First follow up"
+        assert history[2]["content"] == "first response"
+        assert history[3]["content"] == "Second follow up"
+        assert history[4]["content"] == "second response"
+
+    def test_new_chat_still_allows_new_prompt(self):
+        from streamlit.testing.v1 import AppTest
+
+        async def _fake_stream(prompt):
+            if "Fresh start" in prompt:
+                yield "fresh response"
+                return
+
+            assert "First follow up" in prompt
+            yield "first response"
+
+        agent_instance = MagicMock()
+        agent_instance.stream_response = _fake_stream
+
+        mock_agent_module = MagicMock()
+        mock_agent_module.PatientSnapshotAgent = MagicMock(return_value=agent_instance)
+
+        with _patched_page_modules(mock_agent_module):
+            at = AppTest.from_file(_SNAPSHOT_PAGE_PY)
+            at.session_state["Username"] = "DScully"
+            at.session_state["Password"] = "XFiles"
+            at.session_state["Roles"] = ["Doctor"]
+            at.session_state["logged_in"] = True
+            at = at.run()
+
+            at = at.chat_input[0].set_value("First follow up").run()
+
+            at = at.button[[button.label for button in at.button].index("New chat")].click().run()
+
+            at = at.chat_input[0].set_value("Fresh start").run()
+
+        assert not at.exception
+        assert len(at.chat_input) == 1
+
+        history = at.session_state["snapshot_chat_messages"]
+        assert len(history) == 3
+        assert history[0]["role"] == "assistant"
+        assert history[0]["content"] == "Hello. Ask for a patient snapshot, recent clinical context, or a concise follow-up summary."
+        assert history[1]["content"] == "Fresh start"
+        assert history[2]["content"] == "fresh response"
+
+    def test_chat_page_surfaces_agent_errors_and_preserves_history(self):
+        from streamlit.testing.v1 import AppTest
+
+        async def _fake_stream(prompt):
+            assert "Summarize Jane Doe" in prompt
+            if False:
+                yield "unreachable"
+            raise RuntimeError("backend exploded")
+
+        agent_instance = MagicMock()
+        agent_instance.stream_response = _fake_stream
+
+        mock_agent_module = MagicMock()
+        mock_agent_module.PatientSnapshotAgent = MagicMock(return_value=agent_instance)
+
+        with _patched_page_modules(mock_agent_module):
+            at = AppTest.from_file(_SNAPSHOT_PAGE_PY)
+            at.session_state["Username"] = "DScully"
+            at.session_state["Password"] = "XFiles"
+            at.session_state["Roles"] = ["Doctor"]
+            at.session_state["logged_in"] = True
+            at = at.run()
+            at = at.chat_input[0].set_value("Summarize Jane Doe").run()
+
+        assert not at.exception
+
+        history = at.session_state["snapshot_chat_messages"]
+        assert history[1]["role"] == "user"
+        assert history[1]["content"] == "Summarize Jane Doe"
+        assert history[2]["role"] == "assistant"
+        assert "snapshot agent failed" in history[2]["content"].lower()
+        assert "backend exploded" in history[2]["content"]
 
     def test_chat_page_shows_tool_activity(self):
         from streamlit.testing.v1 import AppTest
@@ -146,7 +259,7 @@ class TestSnapshotChatPage:
             at.session_state["Roles"] = ["Doctor"]
             at.session_state["logged_in"] = True
             at = at.run()
-            at.button[[button.label for button in at.button].index("Summarize active problems and likely next steps for Stewart Larson.")].click().run()
+            at = at.button[[button.label for button in at.button].index("Summarize active problems and likely next steps for Stewart Larson.")].click().run()
 
         markdown_output = " ".join(str(item.value) for item in at.markdown)
         assert "Tool activity" in markdown_output
@@ -156,6 +269,41 @@ class TestSnapshotChatPage:
         json_values = [item.value for item in at.json]
         assert '{"patient": "Stewart Larson"}' in json_values
         assert '{"Roles": "Doctor"}' in json_values
+
+    def test_chat_page_handles_tool_result_before_tool_call(self):
+        from streamlit.testing.v1 import AppTest
+
+        async def _fake_stream(prompt):
+            assert "Summarize active problems and likely next steps for Stewart Larson." in prompt
+            yield {"type": "tool_result", "id": "call-1", "name": "EchoUser", "status": "success", "content": '{"Roles":"Doctor"}'}
+            yield "Tool summary here."
+
+        agent_instance = MagicMock()
+        agent_instance.stream_response = _fake_stream
+
+        mock_agent_module = MagicMock()
+        mock_agent_module.PatientSnapshotAgent = MagicMock(return_value=agent_instance)
+
+        with _patched_page_modules(mock_agent_module):
+            at = AppTest.from_file(_SNAPSHOT_PAGE_PY)
+            at.session_state["Username"] = "DScully"
+            at.session_state["Password"] = "XFiles"
+            at.session_state["Roles"] = ["Doctor"]
+            at.session_state["logged_in"] = True
+            at = at.run()
+            at = at.button[[button.label for button in at.button].index("Summarize active problems and likely next steps for Stewart Larson.")].click().run()
+
+        assert not at.exception
+        markdown_output = " ".join(str(item.value) for item in at.markdown)
+        assert "Tool activity" in markdown_output
+        assert len(at.expander) == 1
+        assert at.expander[0].label == "EchoUser - Completed"
+        assert len(at.json) == 1
+        assert at.json[0].value == '{"Roles": "Doctor"}'
+
+        history = at.session_state["snapshot_chat_messages"]
+        assert history[2]["role"] == "assistant"
+        assert history[2]["content"] == "Tool summary here."
 
     def test_tools_prompt_lists_tools_without_tool_activity(self):
         from streamlit.testing.v1 import AppTest
@@ -181,7 +329,7 @@ class TestSnapshotChatPage:
             at.session_state["Roles"] = ["Doctor"]
             at.session_state["logged_in"] = True
             at = at.run()
-            at.button[[button.label for button in at.button].index("What tools do you have?")].click().run()
+            at = at.button[[button.label for button in at.button].index("What tools do you have?")].click().run()
 
         markdown_output = " ".join(str(item.value) for item in at.markdown)
         assert "Tool activity" not in markdown_output

@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import json
-import os
 
 import iris
 from langchain.agents import create_agent
@@ -10,18 +9,18 @@ from langchain.messages import HumanMessage, ToolMessage
 from langchain_intersystems.chat_models import init_chat_model
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
-_IRIS_HOST =  "iris"
-_IRIS_PORT = "1972"
+_IRIS_HOST = "iris"
+_IRIS_PORT = 1972
 _IRIS_NAMESPACE = "READYAI"
-_MCP_URL =  "http://iris:8888/mcp/readyai"
+_MCP_URL = "http://iris:8888/mcp/readyai/"
+_MCP_HOST_HEADER = "localhost:8888"
 _LLM_CONFIG_NAME = "gpt-5-nano"
 
 
 
 def _display_tool_name(name: str) -> str:
-    if name.startswith("mcp_readyai_"):
-        return name[len("mcp_readyai_"):]
-    return name
+    displayname = name.split("_")[-1]
+    return displayname
 
 
 @wrap_tool_call
@@ -58,6 +57,7 @@ class PatientSnapshotAgent:
             "Tool accessibility varies by role: Doctors have access to all tools; Nurses have limited access. "
             "You can use EchoUser to confirm the user's identity and role."
             "and if a tool is inaccessible due to role restrictions, you should note this in your response. "
+            "If you have the list tables and query tables tools, try to use them to check observations if the prompt asks for a snapshot"
         )
 
 
@@ -69,8 +69,10 @@ class PatientSnapshotAgent:
 
         # Retrieve a chat model from IRIS Config Store (using a short name defined in _LLM_CONFIG_NAME)
         conn = iris.connect(_IRIS_HOST, _IRIS_PORT, _IRIS_NAMESPACE, self.username, self.password)
-        model = init_chat_model(_LLM_CONFIG_NAME, conn)
-        conn.close()
+        try:
+            model = init_chat_model(_LLM_CONFIG_NAME, conn)
+        finally:
+            conn.close()
 
         tools = await self.get_tools()
         return create_agent(
@@ -85,8 +87,6 @@ class PatientSnapshotAgent:
         Retrieve the list of tools available to this agent from the MCP server.
         Uses basic authentication with the agent's username and password.
         """
-
-        # Create Basic Auth Header using b64 encoded credentials
         auth_header = base64.b64encode(
             f"{self.username}:{self.password}".encode("utf-8")
         ).decode("utf-8")
@@ -96,16 +96,24 @@ class PatientSnapshotAgent:
                 "readyai": {
                     "transport": "http",
                     "url": _MCP_URL,
-                    "headers": {"Authorization": f"Basic {auth_header}"},
+                    # iris-mcp-server rejects Host: iris:8888 from inside Docker.
+                    "headers": {
+                        "Authorization": f"Basic {auth_header}",
+                        "Host": _MCP_HOST_HEADER,
+                    },
                 }
             }
         )
+        
         try:
-            return await client.get_tools()
-        except Exception as e:
-            # If there's an error retrieving tools, raise a RuntimeError with a helpful message
-            # Most common error is not starting the iris-mcp-server transport on the IRIS server
-            raise RuntimeError(f"Failed to retrieve tools from MCP: {e}\n\nHave you started the iris-mcp-server transport?") from e
+            tools = await client.get_tools()
+            if self.username=="NJoy":
+                tools = [tool for tool in tools if "basic" in tool.name ]
+            return tools
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to retrieve tools from MCP at {_MCP_URL}: {exc}"
+            ) from exc
 
 
     async def list_accessible_tools_response(self) -> str:
@@ -120,7 +128,9 @@ class PatientSnapshotAgent:
         return "\n".join(lines)
 
     async def stream_response(self, prompt: str):
-        if prompt == "What tools do you have?":
+        yield "Processing your request...\n\n"
+        yield prompt + "\n\n"
+        if  "What tools do you have?" in prompt[20:]:
             yield await self.list_accessible_tools_response()
             return
 

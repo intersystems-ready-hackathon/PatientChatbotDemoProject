@@ -4,9 +4,9 @@ import iris
 import streamlit as st
 
 
-IRIS_HOST = os.environ.get("IRIS_HOST", "iris")
-IRIS_PORT = int(os.environ.get("IRIS_PORT", "1972"))
-IRIS_NAMESPACE = os.environ.get("IRIS_NAMESPACE", "READYAI")
+IRIS_HOST = "iris"
+IRIS_PORT = 1972
+IRIS_NAMESPACE = "READYAI"
 
 
 st.set_page_config(page_title="ReadyAI Login", page_icon="🩺", layout="centered")

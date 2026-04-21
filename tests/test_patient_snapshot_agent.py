@@ -79,6 +79,26 @@ class TestPatientSnapshotAgentUnit:
             assert mock_icm.call_args[0][1] is mock_conn, "init_chat_model must be called with the IRIS connection"
 
     @pytest.mark.asyncio
+    async def test_get_snapshot_agent_passes_integer_port_to_iris_connect(self):
+        mock_conn = MagicMock()
+        mock_iris = MagicMock()
+        mock_iris.connect.return_value = mock_conn
+        mock_mcp_client = MagicMock()
+        mock_mcp_client.get_tools = AsyncMock(return_value=[])
+
+        with patch("agent.get_patient_snapshot.iris", mock_iris), \
+             patch("agent.get_patient_snapshot.init_chat_model"), \
+             patch("agent.get_patient_snapshot.MultiServerMCPClient", return_value=mock_mcp_client), \
+             patch("agent.get_patient_snapshot.create_agent"):
+            from agent.get_patient_snapshot import PatientSnapshotAgent
+
+            agent = PatientSnapshotAgent("DScully", "XFiles")
+            await agent.get_snapshot_agent()
+
+        assert mock_iris.connect.call_args.args[1] == 1972
+        assert isinstance(mock_iris.connect.call_args.args[1], int)
+
+    @pytest.mark.asyncio
     async def test_get_snapshot_agent_passes_tools_to_create_agent(self):
         mock_model = MagicMock()
         mock_tools = [MagicMock(name="tool1"), MagicMock(name="tool2")]
