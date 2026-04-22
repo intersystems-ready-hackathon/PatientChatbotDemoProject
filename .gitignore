@@ -3,10 +3,10 @@
 .DS_Store
 **.secret
 **/.venv
-__pycache__/
+**/__pycache__/
 *.pyc
 *.key
 *.lic
 *.whl
-
+.pytest_cache/
 
