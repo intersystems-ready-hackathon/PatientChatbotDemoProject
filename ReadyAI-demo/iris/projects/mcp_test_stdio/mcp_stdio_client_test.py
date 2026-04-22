@@ -17,7 +17,7 @@ async def test_iris_mcp():
             print(f"Available tools: {[t.name for t in tools.tools]}")
 
             # Test Echo
-            result = await session.call_tool("mcp_test_EchoUser", {})
-            print(f"Echo result: {result}")
+            result = await session.call_tool("mcp_readyai_basic_ListPatientsBySurname", {"surname": "Larson"})
+            print(f"ListPatientsBySurname result: {result}")
 
 asyncio.run(test_iris_mcp())

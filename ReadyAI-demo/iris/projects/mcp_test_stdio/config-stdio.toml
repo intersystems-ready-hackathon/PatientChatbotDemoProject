@@ -2,7 +2,8 @@
 name = "local"
 server = { host = "localhost", port = 1972, username = "SuperUser", password = "SYS" }
 endpoints = [
-    {path = "/mcp/readyai", username="superuser", password="SYS" }
+    {path = "/mcp/readyai/basic", username="superuser", password="SYS" },
+    {path = "/mcp/readyai/advanced", username="superuser", password="SYS" }
 ]
 
 
