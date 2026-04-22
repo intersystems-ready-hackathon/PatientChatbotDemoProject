@@ -7,42 +7,20 @@ The `./iris/projects` directory is mounted at `/home/irisowner/dev`. The ObjectS
 ## Building AI-HUB 
 
 
----
-Update! I changed the build to use version 144 and the community edition - the main change this causes is WebGateway is no longer required and the http port is back to the standard 52773 rather than 80. 
-
-To use a licensed version a couple of changes are required: 
-    - Change the PORT parameter in FSBRestRequests to 80 
-    - Change the port in the fhirrespository.body to 80
-    
-I also found that the REST requests didn't work during the container build for some reason. The StandardToolSet class depends on the tables being built and if this doesn't compile none of the IPM package will be installed, so you may need to manually run everything in the iris.script file.  
-
----
-
-
 To build the IRIS for Health AI Hub container you will need:
-    - A License Key 
-    - An IRIS for Health AI Hub build kit  (downloaded internally [here](https://kits-web.iscinternal.com/kits/unreleased/IRISHealth/2026.2.0AI/)) Build 142 is confirmed to work. Use the dockerubuntu single-file kit appropriate for your operating system (arm for Mx Mac)
+- An IRIS for Health community AI Hub docker image - can be downloaded from [the Early Access Program Portal](https://evaluation.intersystems.com/Eval/early-access/AIHub)
+    - Download the image, then run `docker load -i /path/to/irishealth-community-2026.2.0AI.156.0-docker.tar.gz`
+    - If you are using a mac (arm64) version, or have downloaded a more recent image, update the image name in `Dockerfile` in ./ReadyAI-demo/iris
+- A `langchain_intersystems-0.0.1-py3-none-any.whl` . Download from the same EAP portal. Save this wheel in ./langchain/dist 
 
-The container build step is available ReadyAI-demo/iris4h-aihub-build. Note you will need to change the version argument to match your kit, and if you are using an arm version, there might be other small mismatches that need changing in the dockerfile. 
-
-```bash 
-docker build -t i4h-aihub-142
-```
-
-I've separated out the i4h-aihub container build to the actual demo container build to make things neater. It does lead to double building so you can always combine these if its inconvenient.
-
-
-## Setting up the demo
-
-After you have built the base i4h-aihub container, you can build the demo container compose project. 
-
-First create a .env file with 
+- An OPENAI_API_KEY - this is used for the langchain side of the demo. It is currently set to use gpt-5-nano and the cost of running the demo is minimal. Add this to .env as as follows: 
+        - Note, if you'd like to use a different AI API provider, the set-us is in `ReadyAI-demo\iris\projects\src\Setup\ConfigStore.cls`, which is automatically called by the iris.script file from the Dockerfile. 
 
 ```dotenv
 OPENAI_API_KEY="sk-....."
 ```
 
-Then
+After performing these three setup step, you can run: 
 
 ```bash
 cd ReadyAI-demo
@@ -85,9 +63,6 @@ do ##class(Setup.Roles).Run()
 
 ## FHIR Server Build 
 
-
-FHIR SQL Builder is not documented for programatic use, but InterSystems Dach SEs worked out how to can create the Builder Spec from POST requests and created a helper class to do this, which is compiled with IPM during the build.
-
 The full FHIR Server and FHIR SQL Build can be done with:
 
 ```bash
@@ -125,6 +100,7 @@ python3 langchain_discovery.py
 ```
 
 If you would like to try the MCP server with Stdio transport (i.e. connect to the MCP from the same system):
+
 ```bash
 docker-compose exec -it iris bash 
 
@@ -136,7 +112,7 @@ python mcp_stdio_client_test.py
 
 ## Streamlit Side
 
-There is a second container running (technically third because we have web-gateway as well) with Python. This is our "Client" container which is connecting to the mcp server as a remote client via HTTP. 
+There is a second container running  with Python. This is our "Client" container which is connecting to the mcp server as a remote client via HTTP. 
 
 The demo app can be found at http://localhost:8501 . 
 
@@ -147,13 +123,3 @@ Try logging in and running the app with:
 
 To show two different access layers. 
 
-
-## Tool Audits
-
-The MCP Server (or technically the toolset (ReadyAI.Toolset) it is serving) has an audit policy defined by: 
-
-```xml
-<Policies>
-    <Audit Class="ReadyAI.Audit.AuditTable" />
-</Policies>
-```

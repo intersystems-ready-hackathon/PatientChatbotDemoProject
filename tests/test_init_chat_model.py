@@ -22,7 +22,7 @@ class TestInitChatModelUnit:
         from langchain_intersystems.chat_models import init_chat_model
 
         with pytest.raises(ValueError, match="must not contain '.'"):
-            init_chat_model("AI.LLM.readyai", MagicMock())
+            init_chat_model("AI.LLM.gpt-5-nano", MagicMock())
 
     def test_raises_if_model_missing_from_config(self):
         from langchain_intersystems.chat_models import _get_chat_config
@@ -32,7 +32,7 @@ class TestInitChatModelUnit:
             _mock_chat_config(mock_iris, {"model_provider": "openai"})
 
             with pytest.raises(ValueError, match="model is missing"):
-                _get_chat_config("readyai", conn)
+                _get_chat_config("gpt-5-nano", conn)
 
     def test_raises_if_model_provider_missing_from_config(self):
         from langchain_intersystems.chat_models import _get_chat_config
@@ -42,7 +42,7 @@ class TestInitChatModelUnit:
             _mock_chat_config(mock_iris, {"model": "gpt-4o-mini"})
 
             with pytest.raises(ValueError, match="model_provider is missing"):
-                _get_chat_config("readyai", conn)
+                _get_chat_config("gpt-5-nano", conn)
 
     def test_returns_base_chat_model_on_valid_config(self):
         from langchain_intersystems.chat_models import init_chat_model
@@ -56,7 +56,7 @@ class TestInitChatModelUnit:
             fake_model = MagicMock(spec=BaseChatModel)
             mock_init.return_value = fake_model
 
-            result = init_chat_model("readyai", conn)
+            result = init_chat_model("gpt-5-nano", conn)
 
             mock_init.assert_called_once_with(model_provider="openai", model="gpt-4o-mini")
             assert result is fake_model
@@ -88,7 +88,7 @@ class TestInitChatModelIntegration:
         irispy = _iris.createIRIS(iris_conn_superuser)
         irispy.classMethodValue("Setup.ConfigStore", "Setup")
 
-        model = init_chat_model("readyai", iris_conn_superuser)
+        model = init_chat_model("gpt-5-nano", iris_conn_superuser)
         assert isinstance(model, BaseChatModel), f"Expected BaseChatModel, got {type(model)}"
 
     def test_init_chat_model_unknown_config_raises(self, iris_conn_superuser):
@@ -104,7 +104,7 @@ class TestInitChatModelIntegration:
         irispy = _iris.createIRIS(iris_conn_superuser)
         irispy.classMethodValue("Setup.ConfigStore", "Setup")
 
-        model = init_chat_model("readyai", iris_conn_superuser)
+        model = init_chat_model("gpt-5-nano", iris_conn_superuser)
         assert "openai" in type(model).__module__.lower() or "openai" in type(model).__name__.lower(), (
             f"Expected an OpenAI model, got {type(model)}"
         )

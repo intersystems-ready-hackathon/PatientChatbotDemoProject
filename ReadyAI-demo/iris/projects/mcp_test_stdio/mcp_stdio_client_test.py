@@ -5,7 +5,7 @@ from mcp.client.stdio import stdio_client
 async def test_iris_mcp():
     server_params = StdioServerParameters(
         command="iris-mcp-server",
-        args=["--config", "../config-stdio.toml","run" ],
+        args=["--config", "./config-stdio.toml","run" ],
     )
 
     async with stdio_client(server_params) as (read, write):

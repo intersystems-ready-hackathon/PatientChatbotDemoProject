@@ -9,8 +9,7 @@ _APP_PATH = os.path.join(
     os.path.dirname(__file__), "..", "ReadyAI-demo", "langchain_external", "readyai_app", "app"
 )
 _MAIN_PY = os.path.join(_APP_PATH, "main.py")
-_DOCTOR_PAGE_PY = os.path.join(_APP_PATH, "pages", "DoctorPage.py")
-_NURSE_PAGE_PY = os.path.join(_APP_PATH, "pages", "NursePage.py")
+_SNAPSHOT_PAGE_PY = os.path.join(_APP_PATH, "pages", "snapshot_page.py")
 
 
 def _make_iris_mock(roles: str, fail: bool = False):
@@ -133,57 +132,13 @@ class TestLoginPage:
         assert "Nurse" not in roles
 
 
-class TestDoctorPage:
+class TestDoctorSnapshotPage:
+    """Smoke tests for snapshot_page.py with Doctor role session state."""
+
     def _at(self, snapshot_chunks=None):
         from streamlit.testing.v1 import AppTest
 
         chunks = snapshot_chunks or ["Patient summary here."]
-
-        async def _fake_stream(self_agent, prompt):
-            for c in chunks:
-                yield c
-
-        agent_mock = MagicMock()
-        agent_mock.stream_response = _fake_stream
-        agent_cls_mock = MagicMock(return_value=agent_mock)
-
-        mock_agent_module = MagicMock()
-        mock_agent_module.PatientSnapshotAgent = agent_cls_mock
-
-        with _patched_page_modules(mock_agent_module):
-            at = AppTest.from_file(_DOCTOR_PAGE_PY)
-            at.session_state["Username"] = "DScully"
-            at.session_state["Password"] = "XFiles"
-            return at.run()
-
-    def test_doctor_page_renders_title(self):
-        at = self._at()
-        assert not at.exception
-        assert any("Doctor" in str(t.value) for t in at.title)
-
-    def test_doctor_page_has_patient_id_input(self):
-        at = self._at()
-        assert len(at.text_input) > 0
-
-    def test_doctor_page_has_generate_button(self):
-        from streamlit.testing.v1 import AppTest
-        mock_agent_module = MagicMock()
-        mock_agent_module.PatientSnapshotAgent = MagicMock()
-
-        with _patched_page_modules(mock_agent_module):
-            at = AppTest.from_file(_DOCTOR_PAGE_PY)
-            at.session_state["Username"] = "DScully"
-            at.session_state["Password"] = "XFiles"
-            at = at.run()
-            at.text_input[0].set_value("Patient/1").run()
-
-        labels = [b.label for b in at.button]
-        assert any("Snapshot" in lbl or "Generate" in lbl for lbl in labels)
-
-    def test_doctor_page_snapshot_button_produces_output(self):
-        from streamlit.testing.v1 import AppTest
-
-        chunks = ["This patient has hypertension."]
 
         async def _fake_stream(prompt):
             for c in chunks:
@@ -192,45 +147,66 @@ class TestDoctorPage:
         instance = MagicMock()
         instance.stream_response = _fake_stream
         agent_cls_mock = MagicMock(return_value=instance)
+
         mock_agent_module = MagicMock()
         mock_agent_module.PatientSnapshotAgent = agent_cls_mock
 
         with _patched_page_modules(mock_agent_module):
-            at = AppTest.from_file(_DOCTOR_PAGE_PY)
+            at = AppTest.from_file(_SNAPSHOT_PAGE_PY)
             at.session_state["Username"] = "DScully"
             at.session_state["Password"] = "XFiles"
-            at = at.run()
-            at.text_input[0].set_value("Patient/1").run()
-            at.button[0].click().run()
+            at.session_state["Roles"] = ["Doctor"]
+            at.session_state["logged_in"] = True
+            return at.run()
 
-        written = " ".join(str(m.value) for m in at.markdown)
-        assert "hypertension" in written or len(at.markdown) > 0
-
-
-class TestNursePage:
-    def test_nurse_page_renders_title(self):
-        from streamlit.testing.v1 import AppTest
-        mock_agent_module = MagicMock()
-        mock_agent_module.PatientSnapshotAgent = MagicMock()
-
-        with _patched_page_modules(mock_agent_module):
-            at = AppTest.from_file(_NURSE_PAGE_PY)
-            at.session_state["Username"] = "NJoy"
-            at.session_state["Password"] = "pokemon"
-            at = at.run()
-
+    def test_doctor_snapshot_page_renders_without_exception(self):
+        at = self._at()
         assert not at.exception
-        assert any("Nurse" in str(t.value) for t in at.title)
 
-    def test_nurse_page_has_patient_id_input(self):
+    def test_doctor_snapshot_page_has_patient_name_input(self):
+        at = self._at()
+        assert len(at.text_input) > 0
+        assert at.text_input[0].label == "Patient name"
+
+    def test_doctor_snapshot_page_has_new_chat_and_logout_buttons(self):
+        at = self._at()
+        labels = [b.label for b in at.button]
+        assert "New chat" in labels
+        assert "Log out" in labels
+
+    def test_doctor_snapshot_page_shows_suggested_prompts(self):
+        at = self._at()
+        labels = [b.label for b in at.button]
+        assert any("snapshot" in lbl.lower() or "tools" in lbl.lower() for lbl in labels)
+
+
+class TestNurseSnapshotPage:
+    """Smoke tests for snapshot_page.py with Nurse role session state."""
+
+    def _at(self):
         from streamlit.testing.v1 import AppTest
+
+        async def _fake_stream(prompt):
+            yield "Nurse response."
+
+        instance = MagicMock()
+        instance.stream_response = _fake_stream
         mock_agent_module = MagicMock()
-        mock_agent_module.PatientSnapshotAgent = MagicMock()
+        mock_agent_module.PatientSnapshotAgent = MagicMock(return_value=instance)
 
         with _patched_page_modules(mock_agent_module):
-            at = AppTest.from_file(_NURSE_PAGE_PY)
+            at = AppTest.from_file(_SNAPSHOT_PAGE_PY)
             at.session_state["Username"] = "NJoy"
             at.session_state["Password"] = "pokemon"
-            at = at.run()
+            at.session_state["Roles"] = ["Nurse"]
+            at.session_state["logged_in"] = True
+            return at.run()
 
+    def test_nurse_snapshot_page_renders_without_exception(self):
+        at = self._at()
+        assert not at.exception
+
+    def test_nurse_snapshot_page_has_patient_name_input(self):
+        at = self._at()
         assert len(at.text_input) > 0
+        assert at.text_input[0].label == "Patient name"

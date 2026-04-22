@@ -1,6 +1,17 @@
 Class Setup.Roles Extends %RegisteredObject
 {
 
+ClassMethod GrantExecute() As %Status
+{
+    &sql(GRANT EXECUTE ON ReadyAI.Tools_ListPatientsBySurname TO Nurse)
+ 	&sql(GRANT EXECUTE ON ReadyAI.Tools_ListMedications TO Nurse)
+ 	&sql(GRANT EXECUTE ON ReadyAI.Tools_ListAllergies TO Nurse)
+ 	&sql(GRANT EXECUTE ON ReadyAI.Tools_ListAllergies TO Doctor)
+ 	&sql(GRANT EXECUTE ON ReadyAI.Tools_Allergies TO Doctor)
+ 	&sql(GRANT EXECUTE ON ReadyAI.Tools TO Doctor)
+}
+
+
 ClassMethod Run() As %Status
 {
     New $NAMESPACE
@@ -13,21 +24,22 @@ ClassMethod Run() As %Status
     
     do ##class(Security.Users).Delete("Test")
 
-    do ##class(Security.Resources).Create("FullMedicalAccess")
+    do ##class(Security.Resources).Create("MedicalAccess")
+    
     do ##class(Security.Resources).Create("OpenAIUser")
 
 
     do ##class(Security.Roles).Create("Doctor", "Roles group for full access to a patients medical records and history", "", "",  )
 
     do ##class(Security.Roles).Get("Doctor", .props)
-    set props("Resources")="%Native_ClassExecution:U,OpenAIUser:R,FullMedicalAccess:R"
+    set props("Resources")="%Native_ClassExecution:U,OpenAIUser:R,MedicalAccess:U"
     set sc = ##class(Security.Roles).Modify("Doctor", .props)
     do $SYSTEM.Status.DisplayError(sc)
     kill props
 
     set props("FullName")= "Dana Scully"
     set props("Password")="xfiles"
-    set props("Roles")="Doctor,%DB_READYAI,%SQL,%HS_DB_READYAI,FSB_Analyst"
+    set props("Roles")="Doctor,%DB_READYAI,%SQL,%HS_DB_READYAI,FSB_Analyst,%DB_HSPATIENT,%DB_HSLIB,%DB_HSREGISTRY,%DB_HSDATA"
 
     do ##class(Security.Users).Create("DScully", .props)
 
@@ -60,6 +72,8 @@ ClassMethod Run() As %Status
     
     do ##class(Security.Users).Create("Test", .props)
     w "Test user created with Class Execution Only",!
+
+    do ..GrantExecute()
 }
 
 }

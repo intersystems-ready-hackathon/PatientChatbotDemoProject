@@ -32,7 +32,7 @@ services:
 
   langchain:
     build:
-      context: ./langchain_external
+      context: ./langchain
     env_file:
       - .env
     environment:
@@ -40,5 +40,5 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - ./langchain_external:/app
+      - ./langchain:/app
     restart: unless-stopped

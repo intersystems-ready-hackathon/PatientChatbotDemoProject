@@ -1,1 +1,0 @@
-- 2026-03-31: `ruff` is not installed in this environment (`python3 -m ruff check` fails with `No module named ruff`), so lint validation used pytest + compileall + package build instead.

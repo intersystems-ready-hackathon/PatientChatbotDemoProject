@@ -50,12 +50,19 @@ ClassMethod LocalPOSTRequest(resource As %String, filePath As %String) As %Statu
 }
 
 ClassMethod WaitForAnalysisComplete(id As %String)
-{
+{   
+    set timecount = 0
     for {
         quit:..GetAnalysisStatus(id)="completed"
         quit:..GetAnalysisStatus(id)="errored"
+        w ..GetAnalysisStatus(id), !
         write "Waiting...", !
+        set timecount = timecount + 2
         hang 2
+        if timecount>120{
+            write "Analysis is taking longer than expected, exiting wait loop", !
+            quit
+        }
     }
 
     write "Finished waiting", !

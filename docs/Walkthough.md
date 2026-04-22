@@ -22,7 +22,7 @@ Finally, an LLM configuration is created in the new Configuration Store, the set
 ## Step 2: Defining Tools
 
 
-**Disclaimer: thisn demo project is a simplistic representation of a complex system.**
+**Disclaimer: this demo project is a simplistic representation of a complex system.**
 
 We want to create tools to perform custom queries on the database using SQL. We are going to define 6 tools, with two different access levels. 
 
@@ -403,6 +403,12 @@ async def main():
 asyncio.run(main)
 ```
 
-## Step 8: Build an AI Agent
 
-We can create 
+### Step 8: Config Store Configuration
+
+
+
+
+## Appendix (Other useful bits)
+
+The main demo takes us ot
