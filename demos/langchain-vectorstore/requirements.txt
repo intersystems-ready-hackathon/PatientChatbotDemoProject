@@ -1,5 +1,0 @@
-dist/langchain_intersystems-0.0.1-py3-none-any.whl
-langchain-openai>=0.3
-langchain-community>=0.3
-langchain-text-splitters>=1.0
-intersystems-irispython~=5.3

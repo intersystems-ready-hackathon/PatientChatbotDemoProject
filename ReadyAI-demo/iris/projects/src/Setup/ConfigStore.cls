@@ -33,6 +33,8 @@ ClassMethod SetupWithAPIKey(pAPIKey As %String) As %Status
     set llmConfig = {"model_provider": "openai", "model": "gpt-5-nano", "api_key": "secret://ReadyAI-Secrets.OpenAI#api_key"}
 
     set sc = ##class(%ConfigStore.Configuration).Create("AI", "LLM", "", "gpt-5-nano", llmConfig)
+
+    
     if $$$ISERR(sc) {
         write "ERROR creating LLM config: ", $System.Status.GetErrorText(sc), !
         quit sc
