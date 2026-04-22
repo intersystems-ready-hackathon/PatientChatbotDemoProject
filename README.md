@@ -6,25 +6,14 @@ The `./iris/projects` directory is mounted at `/home/irisowner/dev`. The ObjectS
 
 ## Building AI-HUB 
 
----
-Update! I changed the build to use version 144 and the community edition - the main change this causes is WebGateway is no longer required and the http port is back to the standard 52773 rather than 80. 
-
-To use a licensed version a couple of changes are required: 
-    - Change the PORT parameter in FSBRestRequests to 80 
-    - Change the port in the fhirrespository.body to 80
-    
-I also found that the REST requests didn't work during the container build for some reason. The StandardToolSet class depends on the tables being built and if this doesn't compile none of the IPM package will be installed, so you may need to manually run everything in the iris.script file.  
----
-
 
 To build the IRIS for Health AI Hub container you will need:
-    - An IRIS for Health community docker image - can be downloaded from [the Early Access Program Portal](https://evaluation.intersystems.com/Eval/early-access/AIHub)
-        - Download the image, then run `docker load -i /path/to/irishealth-community-2026.2.0AI.156.0-docker.tar.gz`
-        - If you are using a mac (arm64) version, or have downloaded a more recent image, update the image name in `Dockerfile` in ./ReadyAI-demo/iris
+- An IRIS for Health community AI Hub docker image - can be downloaded from [the Early Access Program Portal](https://evaluation.intersystems.com/Eval/early-access/AIHub)
+    - Download the image, then run `docker load -i /path/to/irishealth-community-2026.2.0AI.156.0-docker.tar.gz`
+    - If you are using a mac (arm64) version, or have downloaded a more recent image, update the image name in `Dockerfile` in ./ReadyAI-demo/iris
+- A `langchain_intersystems-0.0.1-py3-none-any.whl` . Download from the same EAP portal. Save this wheel in ./langchain/dist 
 
-    - A `langchain_intersystems-0.0.1-py3-none-any.whl` . Download from the same EAP portal. Save this wheel in ./langchain/dist 
-
-    - An OPENAI_API_KEY - this is used for the langchain side of the demo. It is currently set to use gpt-5-nano and the cost of running the demo is minimal. Add this to .env as as follows: 
+- An OPENAI_API_KEY - this is used for the langchain side of the demo. It is currently set to use gpt-5-nano and the cost of running the demo is minimal. Add this to .env as as follows: 
         - Note, if you'd like to use a different AI API provider, the set-us is in `ReadyAI-demo\iris\projects\src\Setup\ConfigStore.cls`, which is automatically called by the iris.script file from the Dockerfile. 
 
 ```dotenv

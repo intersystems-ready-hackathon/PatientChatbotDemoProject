@@ -10,3 +10,4 @@
 *.whl
 .pytest_cache/
 
+**/iris-main.log
