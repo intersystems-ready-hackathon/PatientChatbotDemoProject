@@ -23,6 +23,19 @@ def _display_tool_name(name: str) -> str:
     return displayname
 
 
+def _tool_field(tool, field_name: str) -> str:
+    if isinstance(tool, dict):
+        return tool.get(field_name, "")
+    return getattr(tool, field_name, "")
+
+
+def _latest_clinician_message(prompt: str) -> str:
+    for line in reversed(prompt.splitlines()):
+        if line.startswith("Clinician:"):
+            return line.removeprefix("Clinician:").strip()
+    return prompt.strip()
+
+
 @wrap_tool_call
 async def _handle_tool_call_error(request: ToolCallRequest, handler):
     """
@@ -122,15 +135,16 @@ class PatientSnapshotAgent:
             return "I do not currently have any MCP tools available."
 
         lines = ["I can currently access these tools:"]
-        for tool in sorted(tools, key=lambda t: _display_tool_name(t.name).lower()):
-            lines.append(f"- {_display_tool_name(tool.name)}: {tool.description}")
+        for tool in sorted(tools, key=lambda t: _display_tool_name(_tool_field(t, "name")).lower()):
+            tool_name = _display_tool_name(_tool_field(tool, "name"))
+            tool_description = _tool_field(tool, "description")
+            lines.append(f"- {tool_name}: {tool_description}")
         lines.append("This list is based on the tools currently exposed to your signed-in role.")
         return "\n".join(lines)
 
     async def stream_response(self, prompt: str):
-        yield "Processing your request...\n\n"
-        yield prompt + "\n\n"
-        if  "What tools do you have?" in prompt[20:]:
+        latest_request = _latest_clinician_message(prompt).lower()
+        if "what tools do you have" in latest_request:
             yield await self.list_accessible_tools_response()
             return
 
