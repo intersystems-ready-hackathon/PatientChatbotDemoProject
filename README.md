@@ -78,10 +78,13 @@ The SetupRequestBodies folder contains the FHIR-SQL Specification bodies, which 
 
 ## Start the MCP server
 
-On start-up, you can check the health and tools available on the MCP server at 
+On start-up, you can check the health and tools available on the MCP servers
 
-- http://localhost:32783/mcp/readyAI/v1/health
-- http://localhost:32783/mcp/readyAI/v1/services
+
+- http://localhost:32783/mcp/readyAI/basic/v1/health
+- http://localhost:32783/mcp/readyAI/basic/v1/services
+- http://localhost:32783/mcp/readyAI/advanced/v1/health
+- http://localhost:32783/mcp/readyAI/advanced/v1/services
 
 To actually use the MCP server, the wgprotocol transport needs to be started using the `iris-mcp-server` binary: 
 
@@ -89,6 +92,9 @@ To actually use the MCP server, the wgprotocol transport needs to be started usi
 docker-compose exec -it iris bash 
 iris-mcp-server -c config.toml run
 ```
+
+
+These two mcp servers represent a 
 
 ## Test MCP server
 
