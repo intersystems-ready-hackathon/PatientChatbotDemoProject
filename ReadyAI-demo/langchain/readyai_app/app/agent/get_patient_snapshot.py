@@ -101,9 +101,28 @@ class PatientSnapshotAgent:
         
         try:
             tools = await client.get_tools()
-            if self.username.lower()=="njoy":
-                tools = [tool for tool in tools if "basic" in tool.name ]
-            return tools
+            accessible_tools = []
+            probe_inputs = {
+                "ListTables": {},
+                "QueryTable": {"patientId": 7, "tableName": "Observation"},
+                "ListAllergies": {"patientId": 7},
+                "ListMedications": {"patientId": 7},
+                "ListPatientsBySurname": {"surname": "Larson"},
+            }
+
+            for tool in tools:
+                tool_name = tool.name.split("_")[-1]
+                if tool_name not in probe_inputs:
+                    accessible_tools.append(tool)
+                    continue
+
+                try:
+                    await tool.ainvoke(probe_inputs[tool_name])
+                    accessible_tools.append(tool)
+                except Exception:
+                    pass
+
+            return accessible_tools
         except Exception as exc:
             raise RuntimeError(
                 f"Failed to retrieve tools from MCP at {_MCP_URL}: {exc}"

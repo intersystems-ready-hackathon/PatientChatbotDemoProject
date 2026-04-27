@@ -38,7 +38,7 @@ class TestPatientSnapshotAgentUnit:
 
     @pytest.mark.asyncio
     async def test_get_tools_builds_basic_auth_header(self):
-        mock_tools = [MagicMock(name="mcp_readyai_ListTables")]
+        mock_tools = [SimpleNamespace(name="EchoUser", ainvoke=AsyncMock(return_value={}))]
         mock_client = MagicMock()
         mock_client.get_tools = AsyncMock(return_value=mock_tools)
 
@@ -56,6 +56,35 @@ class TestPatientSnapshotAgentUnit:
             assert decoded == "DScully:XFiles"
 
         assert tools == mock_tools
+
+    @pytest.mark.asyncio
+    async def test_get_tools_probes_known_tools_and_keeps_unknown_tools(self):
+        list_tables = SimpleNamespace(
+            name="ListTables",
+            ainvoke=AsyncMock(return_value={"Status": "OK"}),
+        )
+        query_table = SimpleNamespace(
+            name="QueryTable",
+            ainvoke=AsyncMock(side_effect=PermissionError("forbidden")),
+        )
+        echo_user = SimpleNamespace(
+            name="EchoUser",
+            ainvoke=AsyncMock(return_value={"user": "DScully"}),
+        )
+
+        mock_client = MagicMock()
+        mock_client.get_tools = AsyncMock(return_value=[list_tables, query_table, echo_user])
+
+        with patch("agent.get_patient_snapshot.MultiServerMCPClient", return_value=mock_client):
+            from agent.get_patient_snapshot import PatientSnapshotAgent
+
+            agent = PatientSnapshotAgent("DScully", "XFiles")
+            tools = await agent.get_tools()
+
+        assert tools == [list_tables, echo_user]
+        list_tables.ainvoke.assert_awaited_once_with({})
+        query_table.ainvoke.assert_awaited_once_with({"patientId": 7, "tableName": "Observation"})
+        echo_user.ainvoke.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_get_snapshot_agent_calls_init_chat_model_with_conn(self):
