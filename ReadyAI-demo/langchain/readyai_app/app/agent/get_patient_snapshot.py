@@ -17,25 +17,6 @@ _MCP_HOST_HEADER = "localhost:8888"
 _LLM_CONFIG_NAME = "gpt-5-nano"
 
 
-
-def _display_tool_name(name: str) -> str:
-    displayname = name.split("_")[-1]
-    return displayname
-
-
-def _tool_field(tool, field_name: str) -> str:
-    if isinstance(tool, dict):
-        return tool.get(field_name, "")
-    return getattr(tool, field_name, "")
-
-
-def _latest_clinician_message(prompt: str) -> str:
-    for line in reversed(prompt.splitlines()):
-        if line.startswith("Clinician:"):
-            return line.removeprefix("Clinician:").strip()
-    return prompt.strip()
-
-
 @wrap_tool_call
 async def _handle_tool_call_error(request: ToolCallRequest, handler):
     """
@@ -120,7 +101,7 @@ class PatientSnapshotAgent:
         
         try:
             tools = await client.get_tools()
-            if self.username=="NJoy":
+            if self.username.lower()=="njoy":
                 tools = [tool for tool in tools if "basic" in tool.name ]
             return tools
         except Exception as exc:
@@ -135,15 +116,19 @@ class PatientSnapshotAgent:
             return "I do not currently have any MCP tools available."
 
         lines = ["I can currently access these tools:"]
-        for tool in sorted(tools, key=lambda t: _display_tool_name(_tool_field(t, "name")).lower()):
-            tool_name = _display_tool_name(_tool_field(tool, "name"))
-            tool_description = _tool_field(tool, "description")
-            lines.append(f"- {tool_name}: {tool_description}")
+        for tool in sorted(tools, key=lambda tool: tool.name.split("_")[-1].lower()):
+            tool_name = tool.name.split("_")[-1]
+            lines.append(f"- {tool_name}: {tool.description}")
         lines.append("This list is based on the tools currently exposed to your signed-in role.")
         return "\n".join(lines)
 
     async def stream_response(self, prompt: str):
-        latest_request = _latest_clinician_message(prompt).lower()
+        latest_request = prompt.strip()
+        for line in reversed(prompt.splitlines()):
+            if line.startswith("Clinician:"):
+                latest_request = line.removeprefix("Clinician:").strip()
+                break
+        latest_request = latest_request.lower()
         if "what tools do you have" in latest_request:
             yield await self.list_accessible_tools_response()
             return

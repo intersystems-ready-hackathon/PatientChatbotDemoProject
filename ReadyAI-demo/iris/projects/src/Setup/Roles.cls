@@ -3,12 +3,48 @@ Class Setup.Roles Extends %RegisteredObject
 
 ClassMethod GrantExecute() As %Status
 {
-    &sql(GRANT EXECUTE ON ReadyAI.Tools_ListPatientsBySurname TO Nurse)
- 	&sql(GRANT EXECUTE ON ReadyAI.Tools_ListMedications TO Nurse)
- 	&sql(GRANT EXECUTE ON ReadyAI.Tools_ListAllergies TO Nurse)
- 	&sql(GRANT EXECUTE ON ReadyAI.Tools_ListAllergies TO Doctor)
- 	&sql(GRANT EXECUTE ON ReadyAI.Tools_Allergies TO Doctor)
- 	&sql(GRANT EXECUTE ON ReadyAI.Tools TO Doctor)
+    new $NAMESPACE
+    set $NAMESPACE = "READYAI"
+    set sc = ..ExecuteGrant("GRANT EXECUTE ON ReadyAI.Tools_ListPatientsBySurname TO Nurse")
+    quit:$$$ISERR(sc) sc
+    set sc = ..ExecuteGrant("GRANT EXECUTE ON ReadyAI.Tools_ListMedications TO Nurse")
+    quit:$$$ISERR(sc) sc
+    set sc = ..ExecuteGrant("GRANT EXECUTE ON ReadyAI.Tools_ListAllergies TO Nurse")
+    quit:$$$ISERR(sc) sc
+    set sc = ..ExecuteGrant("GRANT EXECUTE ON ReadyAI.Tools_ListAllergies TO Doctor")
+    quit:$$$ISERR(sc) sc
+    set sc = ..ExecuteGrant("GRANT EXECUTE ON ReadyAI.Tools_ListMedications TO Doctor")
+    quit:$$$ISERR(sc) sc
+    set sc = ..ExecuteGrant("GRANT EXECUTE ON ReadyAI.Tools_ListPatientsBySurname TO Doctor")
+    quit:$$$ISERR(sc) sc
+    q $$$OK
+}
+
+
+ClassMethod ExecuteGrant(sql As %String) As %Status
+{
+    set statement = ##class(%SQL.Statement).%New()
+    set sc = statement.%Prepare(sql)
+    if $$$ISERR(sc) {
+        write "ERROR preparing SQL grant: ", sql, !
+        do $SYSTEM.Status.DisplayError(sc)
+        quit sc
+    }
+
+    set sc = $$$OK
+    try {
+        set result = statement.%Execute()
+    } catch ex {
+        set sc = ex.AsStatus()
+    }
+
+    if $$$ISERR(sc) {
+        write "ERROR executing SQL grant: ", sql, !
+        do $SYSTEM.Status.DisplayError(sc)
+        quit sc
+    }
+
+    q $$$OK
 }
 
 
@@ -73,7 +109,7 @@ ClassMethod Run() As %Status
     do ##class(Security.Users).Create("Test", .props)
     w "Test user created with Class Execution Only",!
 
-    do ..GrantExecute()
+    #; do ..GrantExecute()
 }
 
 }

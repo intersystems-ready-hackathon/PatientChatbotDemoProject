@@ -1,5 +1,6 @@
 import sys
 import os
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -201,14 +202,14 @@ class TestPatientSnapshotAgentUnit:
 
         agent = PatientSnapshotAgent("DScully", "XFiles")
         mock_tools = [
-            {
-                "name": "mcp_readyai_EchoUser",
-                "description": "Confirm the signed-in user and roles.",
-            },
-            {
-                "name": "mcp_readyai_QueryTable",
-                "description": "Query a clinical table for one patient.",
-            },
+            SimpleNamespace(
+                name="mcp_readyai_EchoUser",
+                description="Confirm the signed-in user and roles.",
+            ),
+            SimpleNamespace(
+                name="mcp_readyai_QueryTable",
+                description="Query a clinical table for one patient.",
+            ),
         ]
 
         with patch.object(agent, "get_tools", AsyncMock(return_value=mock_tools)), \
